@@ -1,10 +1,10 @@
 <p align="center">
-  <a href="https://pub.dev/packages/photo_editor">
-    <img src="doc/screenshots/badge_no1_gold.png" alt="#1 Flutter Library — photo_editor Golden Award Badge" width="760" />
+  <a href="https://pub.dev/packages/photo_editor_studio">
+    <img src="doc/screenshots/badge_no1_gold.png" alt="#1 Flutter Library — photo_editor_studio Golden Award Badge" width="760" />
   </a>
 </p>
 
-<h1 align="center">photo_editor</h1>
+<h1 align="center">photo_editor_studio</h1>
 
 <p align="center">
   <strong>A modern &amp; professional studio-grade Flutter photo editor library</strong><br />
@@ -12,8 +12,8 @@
 </p>
 
 <p align="center">
-  <a href="https://pub.dev/packages/photo_editor"><img src="https://img.shields.io/pub/v/photo_editor.svg?color=F5B82E&label=pub.dev&style=for-the-badge" alt="pub package" /></a>
-  <a href="https://pub.dev/packages/photo_editor/score"><img src="https://img.shields.io/pub/points/photo_editor?color=4F8BFF&style=for-the-badge" alt="pub points 160/160" /></a>
+  <a href="https://pub.dev/packages/photo_editor_studio"><img src="https://img.shields.io/pub/v/photo_editor_studio.svg?color=F5B82E&label=pub.dev&style=for-the-badge" alt="pub package" /></a>
+  <a href="https://pub.dev/packages/photo_editor_studio/score"><img src="https://img.shields.io/pub/points/photo_editor_studio?color=4F8BFF&style=for-the-badge" alt="pub points 160/160" /></a>
   <a href="https://github.com/andikpbw/flutter-photo-editor/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-34D399.svg?style=for-the-badge" alt="License: MIT" /></a>
   <a href="https://humanize.id"><img src="https://img.shields.io/badge/Supported%20by-Humanize%20AI-F5B82E.svg?style=for-the-badge" alt="Supported by Humanize AI" /></a>
 </p>
@@ -22,18 +22,18 @@
 
 ## Live Real-UI Studio Showcase
 
-`photo_editor` automatically adapts between a sleek **3-pane Desktop Studio** (left navigation rail, zoomable darkroom canvas with live split-screen curtain & magnetic snap guides, right precision inspector with live RGB histogram) and a thumb-friendly **Mobile Studio** layout, in both Dark and Light themes.
+`photo_editor_studio` automatically adapts between a sleek **3-pane Desktop Studio** (left navigation rail, zoomable darkroom canvas with live split-screen curtain & magnetic snap guides, right precision inspector with live RGB histogram) and a thumb-friendly **Mobile Studio** layout, in both Dark and Light themes.
 
 ### Desktop Studio Frame
 
 <p align="center">
-  <img src="doc/screenshots/demo_desktop.gif" alt="photo_editor running live in Desktop Studio frame" width="840" />
+  <img src="doc/screenshots/demo_desktop.gif" alt="photo_editor_studio running live in Desktop Studio frame" width="840" />
 </p>
 
 ### Mobile Frame
 
 <p align="center">
-  <img src="doc/screenshots/demo_mobile.gif" alt="photo_editor running live in Mobile frame" width="360" />
+  <img src="doc/screenshots/demo_mobile.gif" alt="photo_editor_studio running live in Mobile frame" width="360" />
 </p>
 
 ---
@@ -55,17 +55,17 @@
 
 ## Installation
 
-Add `photo_editor` to your `pubspec.yaml`:
+Add `photo_editor_studio` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  photo_editor: ^1.0.0
+  photo_editor_studio: ^1.0.0
 ```
 
 Or install via CLI:
 
 ```bash
-flutter pub add photo_editor
+flutter pub add photo_editor_studio
 ```
 
 ---
@@ -74,12 +74,12 @@ flutter pub add photo_editor
 
 ### 1. Open as a Full-Screen Route
 
-The fastest way to integrate `photo_editor` is `PhotoEditor.open`, which returns a `PhotoEditorResult?` (`null` if cancelled):
+The fastest way to integrate `photo_editor_studio` is `PhotoEditor.open`, which returns a `PhotoEditorResult?` (`null` if cancelled):
 
 ```dart
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:photo_editor/photo_editor.dart';
+import 'package:photo_editor_studio/photo_editor_studio.dart';
 
 Future<void> editPhoto(BuildContext context, Uint8List imageBytes) async {
   final PhotoEditorResult? result = await PhotoEditor.open(
@@ -207,7 +207,7 @@ final config = PhotoEditorConfig(
 
 This library is proudly supported by **[Humanize AI](https://humanize.id)**.
 
-If `photo_editor` powers your Flutter apps, please star the repository on [GitHub](https://github.com/andikpbw/flutter-photo-editor), open issues or feature requests in the [issue tracker](https://github.com/andikpbw/flutter-photo-editor/issues), and visit **[Humanize AI](https://humanize.id)**.
+If `photo_editor_studio` powers your Flutter apps, please star the repository on [GitHub](https://github.com/andikpbw/flutter-photo-editor), open issues or feature requests in the [issue tracker](https://github.com/andikpbw/flutter-photo-editor/issues), and visit **[Humanize AI](https://humanize.id)**.
 
 ---
 

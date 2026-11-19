@@ -5,7 +5,7 @@ import 'photo_adjustments.dart';
 import 'photo_filter.dart';
 import 'photo_frame.dart';
 
-/// Localizable UI text labels used throughout the `photo_editor` interface.
+/// Localizable UI text labels used throughout the `photo_editor_studio` interface.
 @immutable
 class PhotoEditorLabels {
   /// Creates a [PhotoEditorLabels] bundle with sensible English defaults.

@@ -7,7 +7,7 @@ import 'photo_editor_result.dart';
 import 'photo_editor_theme.dart';
 import 'photo_filter.dart';
 
-/// Top-level editing tools available in `photo_editor`.
+/// Top-level editing tools available in `photo_editor_studio`.
 enum PhotoEditorTool {
   /// Crop, straighten, 90° rotation, and horizontal/vertical flip.
   crop,

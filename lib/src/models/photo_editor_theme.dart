@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Visual styling tokens for the `photo_editor` studio UI.
+/// Visual styling tokens for the `photo_editor_studio` UI.
 @immutable
 class PhotoEditorTheme {
   /// Creates a custom [PhotoEditorTheme].

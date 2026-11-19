@@ -1,5 +1,5 @@
-name: photo_editor_example
-description: Example application demonstrating the photo_editor Flutter library.
+name: photo_editor_studio_example
+description: Example application demonstrating the photo_editor_studio Flutter library.
 publish_to: none
 
 environment:
@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  photo_editor:
+  photo_editor_studio:
     path: ../
 
 dev_dependencies:

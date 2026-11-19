@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:photo_editor/photo_editor.dart';
+import 'package:photo_editor_studio/photo_editor_studio.dart';
 
 Uint8List _makeGradientRgba(int width, int height) {
   final data = Uint8List(width * height * 4);

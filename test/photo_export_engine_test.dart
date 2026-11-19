@@ -2,7 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:photo_editor/photo_editor.dart';
+import 'package:photo_editor_studio/photo_editor_studio.dart';
 
 /// Builds a two-tone test image: pure red on the left half, pure blue on the
 /// right half, so geometric transforms and color filters can be asserted at the

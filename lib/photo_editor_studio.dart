@@ -11,7 +11,7 @@
 /// ```dart
 /// import 'dart:typed_data';
 /// import 'package:flutter/material.dart';
-/// import 'package:photo_editor/photo_editor.dart';
+/// import 'package:photo_editor_studio/photo_editor_studio.dart';
 ///
 /// Future<void> openEditor(BuildContext context, Uint8List imageBytes) async {
 ///   final PhotoEditorResult? result = await PhotoEditor.open(

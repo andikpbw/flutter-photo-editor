@@ -3,13 +3,13 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:photo_editor/photo_editor.dart';
+import 'package:photo_editor_studio/photo_editor_studio.dart';
 
 void main() {
   runApp(const PhotoEditorExampleApp());
 }
 
-/// Interactive showcase app for `photo_editor`.
+/// Interactive showcase app for `photo_editor_studio`.
 class PhotoEditorExampleApp extends StatelessWidget {
   const PhotoEditorExampleApp({super.key});
 
@@ -81,7 +81,7 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
       backgroundColor: const Color(0xFF0C0E14),
       appBar: AppBar(
         backgroundColor: const Color(0xFF141822),
-        title: const Text('photo_editor Demo'),
+        title: const Text('photo_editor_studio Demo'),
         actions: <Widget>[
           TextButton.icon(
             onPressed: () => setState(() => _darkTheme = !_darkTheme),

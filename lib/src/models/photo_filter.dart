@@ -71,7 +71,7 @@ class PhotoFilter {
   String toString() => 'PhotoFilter(id: $id, name: $name)';
 }
 
-/// Curated collection of 24 studio-grade color filters built into `photo_editor`.
+/// Curated collection of 24 studio-grade color filters built into `photo_editor_studio`.
 abstract final class PhotoFilters {
   /// Unmodified identity filter.
   static const PhotoFilter original = PhotoFilter(

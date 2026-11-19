@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:photo_editor/photo_editor.dart';
+import 'package:photo_editor_studio/photo_editor_studio.dart';
 
 Future<ui.Image> _buildTestImage(int w, int h) async {
   final recorder = ui.PictureRecorder();

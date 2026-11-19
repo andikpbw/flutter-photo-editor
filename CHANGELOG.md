@@ -1,6 +1,6 @@
 ## 1.0.0
 
-* Initial production release of `photo_editor` — a pro-studio Flutter photo editor engineered with zero external runtime dependencies.
+* Initial production release of `photo_editor_studio` — a pro-studio Flutter photo editor engineered with zero external runtime dependencies.
 * **Adaptive Studio UI**: Responsive 3-pane Desktop Studio and Mobile Studio layouts with Dark and Light themes plus full `PhotoEditorTheme` and `PhotoEditorLabels` localization support.
 * **24 Categorized Studio Filters**: Organized into `All`, `Vivid`, `Cinema`, `Film`, `B&W`, and `Moody` with live thumbnail previews, adjustable intensity (`0–100%`), and custom 4×5 matrix filter support.
 * **14 Precision Adjustments + Live RGB Histogram**: Real-time Exposure, Brightness, Contrast, GPU Highlights & Shadows, Saturation, Vibrance, Warmth, Tint, Clarity, Fade, Radial Vignette, Organic Film Grain, and Gaussian Blur paired with a live 64-bin RGB & Luminance Histogram.
