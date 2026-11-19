@@ -7,7 +7,7 @@
 <h1 align="center">photo_editor</h1>
 
 <p align="center">
-  <strong>A modern &amp; professional Adobe Photoshop, IMG.LY &amp; Canva-caliber Flutter photo editor library</strong><br />
+  <strong>A modern &amp; professional studio-grade Flutter photo editor library</strong><br />
   24 categorized color filters, 14 precision adjustments with live RGB histogram, interactive split-screen before/after comparison, cropping, straightening, vector markup &amp; privacy blur, typography layers with magnetic snap guides, studio badges, and museum/Polaroid frames across <strong>Android, iOS, macOS, Windows, Linux &amp; Web (WASM)</strong> — with <strong>zero external runtime dependencies</strong>.
 </p>
 
@@ -44,10 +44,10 @@
 | --- | --- |
 | **24 Categorized Color Filters** | Organized into `All`, `Vivid`, `Cinema`, `Film`, `B&W`, and `Moody` (`Vivid`, `Warm`, `Cool`, `Velvia`, `Cinematic`, `Teal Gold`, `Dramatic`, `Golden`, `Midnight`, `Portra`, `Gold 400`, `Fade`, `Vintage`, `Retro 70s`, `Nordic`, `Pastel`, `Dreamy`, `Forest`, `Cyber`, `Mono`, `Noir`, `Silver`, `Sepia`, `Original`) with live thumbnails, `0–100%` intensity blending, and custom 4×5 matrix filter support. |
 | **14 Precision Adjustments + Live RGB Histogram** | Real-time **Exposure**, **Brightness**, **Contrast**, non-linear GPU **Highlights** & **Shadows**, **Saturation**, skin-tone-aware **Vibrance**, **Warmth**, **Tint**, **Clarity**, **Fade**, **Radial Vignette**, **Analog Film Grain**, and resolution-scaled **Gaussian Blur** — paired with a live 64-bin **RGB & Luminance Histogram** on desktop. |
-| **Interactive Split-Screen Compare** | Lightroom / Photoshop-style draggable **Before / After Split Curtain** directly on the canvas with `BEFORE` / `AFTER` pills plus full-original preview toggle. |
+| **Interactive Split-Screen Compare** | Draggable **Before / After Split Curtain** directly on the canvas with `BEFORE` / `AFTER` pills plus full-original preview toggle. |
 | **Crop, Rotate, Flip & Straighten** | Interactive 8-handle + interior drag crop frame with rule-of-thirds grid, live pixel dimension badge, aspect ratios (`Free`, `Original`, `1:1`, `4:3`, `3:2`, `16:9`, `4:5`, `9:16`), 90° left/right rotation, horizontal/vertical mirror, and `-45°..+45°` fine straightening with exact automatic corner-fill zoom. |
 | **8 Markup & Privacy Blur Tools** | Smooth quadratic Bézier **Pen**, translucent **Marker**, straight **Line**, vector **Arrow**, **Box**, solid **Fill Box**, **Oval**, and non-destructive **Privacy Blur** redaction regions stored in resolution-independent normalized coordinates. |
-| **Typography, Layers & Smart Snap Guides** | Multi-line **Text** overlays (`Plain`, `Solid`, `Glass`, `Outline` pills, bold/italic, alignment, letter spacing/tracking, line height, opacity, shadow) plus **Stickers** & crisp cross-platform **Studio Vector Badges** (`RAW`, `PRO`, `4K`, `HDR`, `NEW`, `LIVE`, `35MM`, `100%`) with Canva-style **magnetic center snap alignment guides**, visibility toggles, Z-order reordering, duplication, and arrow-key nudging. |
+| **Typography, Layers & Smart Snap Guides** | Multi-line **Text** overlays (`Plain`, `Solid`, `Glass`, `Outline` pills, bold/italic, alignment, letter spacing/tracking, line height, opacity, shadow) plus **Stickers** & crisp cross-platform **Studio Vector Badges** (`RAW`, `PRO`, `4K`, `HDR`, `NEW`, `LIVE`, `35MM`, `100%`) with **magnetic center snap alignment guides**, visibility toggles, Z-order reordering, duplication, and arrow-key nudging. |
 | **Studio Frames & Borders** | `Minimal`, museum `Gallery` mat, classic `Polaroid`, widescreen `Cinema` letterbox, and `Rounded Card` frames with customizable colors, border thickness, and inner corner radius rendered identically in preview and export. |
 | **Zero-Dependency WYSIWYG Export** | Shared `PhotoSceneRenderer` pipeline guarantees pixel-identical output across **PNG**, built-in pure-Dart baseline **JPEG** (`quality: 1..100`), and **Raw RGBA**, with optional `maxWidth`/`maxHeight` bounds across all 6 Flutter platforms + **WebAssembly (WASM)**. |
 
