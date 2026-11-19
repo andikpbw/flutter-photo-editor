@@ -59,7 +59,7 @@ Add `photo_editor_studio` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  photo_editor_studio: ^1.0.0
+  photo_editor_studio: ^1.0.1
 ```
 
 Or install via CLI:
@@ -78,7 +78,7 @@ The fastest way to integrate `photo_editor_studio` is `PhotoEditor.open`, which 
 
 ```dart
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:photo_editor_studio/photo_editor_studio.dart';
 
 Future<void> editPhoto(BuildContext context, Uint8List imageBytes) async {

@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../controller/photo_editor_controller.dart';
 import '../../models/drawing_stroke.dart';
 import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
+import 'studio_primitives.dart';
 import 'studio_widgets.dart';
 
 /// Drawing, vector shape markup, and non-destructive privacy-blur controls.
@@ -36,21 +37,21 @@ class DrawPanel extends StatelessWidget {
   static IconData _iconFor(BrushTool tool) {
     switch (tool) {
       case BrushTool.pen:
-        return Icons.edit_rounded;
+        return StudioIcons.editRounded;
       case BrushTool.highlighter:
-        return Icons.brush_rounded;
+        return StudioIcons.brush;
       case BrushTool.line:
-        return Icons.horizontal_rule_rounded;
+        return StudioIcons.horizontalRule;
       case BrushTool.arrow:
-        return Icons.north_east_rounded;
+        return StudioIcons.northEast;
       case BrushTool.rectangle:
-        return Icons.crop_square_rounded;
+        return StudioIcons.cropSquare;
       case BrushTool.filledRectangle:
-        return Icons.square_rounded;
+        return StudioIcons.square;
       case BrushTool.oval:
-        return Icons.circle_outlined;
+        return StudioIcons.circleOutlined;
       case BrushTool.blurRect:
-        return Icons.blur_circular_rounded;
+        return StudioIcons.blurCircular;
     }
   }
 
@@ -61,7 +62,7 @@ class DrawPanel extends StatelessWidget {
 
     final sizeSlider = StudioSliderRow(
       label: labels.brushSize,
-      icon: Icons.line_weight_rounded,
+      icon: StudioIcons.lineWeight,
       value: controller.brushWidth,
       min: 0.003,
       max: 0.05,
@@ -75,7 +76,7 @@ class DrawPanel extends StatelessWidget {
 
     final opacitySlider = StudioSliderRow(
       label: labels.brushOpacity,
-      icon: Icons.opacity_rounded,
+      icon: StudioIcons.opacity,
       value: controller.brushOpacity,
       min: 0.15,
       max: 1.0,
@@ -107,49 +108,47 @@ class DrawPanel extends StatelessWidget {
             childAspectRatio: 1.05,
             children: BrushTool.values.map((tool) {
               final selected = controller.brushTool == tool;
-              return Tooltip(
-                message: labels.brushToolLabel(tool),
-                child: InkWell(
-                  onTap: () => controller.setBrushTool(tool),
-                  borderRadius: BorderRadius.circular(10),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 140),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? theme.accentColor.withValues(alpha: 0.16)
-                          : theme.elevatedSurfaceColor,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: selected ? theme.accentColor : theme.borderColor,
-                      ),
+              return StudioPressable(
+                tooltip: labels.brushToolLabel(tool),
+                onTap: () => controller.setBrushTool(tool),
+                borderRadius: BorderRadius.circular(10),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 140),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? theme.accentColor.withValues(alpha: 0.16)
+                        : theme.elevatedSurfaceColor,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: selected ? theme.accentColor : theme.borderColor,
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Icon(
-                          _iconFor(tool),
-                          size: 18,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Icon(
+                        _iconFor(tool),
+                        size: 18,
+                        color: selected
+                            ? theme.accentColor
+                            : theme.primaryTextColor,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        labels.brushToolLabel(tool),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
                           color: selected
                               ? theme.accentColor
-                              : theme.primaryTextColor,
+                              : theme.secondaryTextColor,
+                          fontSize: 9.5,
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          labels.brushToolLabel(tool),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: selected
-                                ? theme.accentColor
-                                : theme.secondaryTextColor,
-                            fontSize: 9.5,
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -171,19 +170,14 @@ class DrawPanel extends StatelessWidget {
           ],
           if (hasStrokes) ...<Widget>[
             const SizedBox(height: 16),
-            OutlinedButton.icon(
+            StudioButton(
+              label: '${labels.undo} (${controller.state.strokes.length})',
+              icon: StudioIcons.undo,
+              iconSize: 16,
+              foregroundColor: theme.primaryTextColor,
+              borderColor: theme.borderColor,
+              expand: true,
               onPressed: controller.undoLastStroke,
-              icon: const Icon(Icons.undo_rounded, size: 16),
-              label: Text(
-                '${labels.undo} (${controller.state.strokes.length})',
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: theme.primaryTextColor,
-                side: BorderSide(color: theme.borderColor),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
             ),
           ],
         ],
@@ -209,31 +203,30 @@ class DrawPanel extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final tool = BrushTool.values[index];
                       final selected = controller.brushTool == tool;
-                      return Tooltip(
-                        message: labels.brushToolLabel(tool),
-                        child: GestureDetector(
-                          onTap: () => controller.setBrushTool(tool),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 140),
-                            padding: const EdgeInsets.symmetric(horizontal: 11),
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? theme.accentColor.withValues(alpha: 0.16)
-                                  : theme.elevatedSurfaceColor,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: selected
-                                    ? theme.accentColor
-                                    : theme.borderColor,
-                              ),
-                            ),
-                            child: Icon(
-                              _iconFor(tool),
-                              size: 18,
+                      return StudioPressable(
+                        tooltip: labels.brushToolLabel(tool),
+                        onTap: () => controller.setBrushTool(tool),
+                        borderRadius: BorderRadius.circular(10),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 140),
+                          padding: const EdgeInsets.symmetric(horizontal: 11),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? theme.accentColor.withValues(alpha: 0.16)
+                                : theme.elevatedSurfaceColor,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
                               color: selected
                                   ? theme.accentColor
-                                  : theme.primaryTextColor,
+                                  : theme.borderColor,
                             ),
+                          ),
+                          child: Icon(
+                            _iconFor(tool),
+                            size: 18,
+                            color: selected
+                                ? theme.accentColor
+                                : theme.primaryTextColor,
                           ),
                         ),
                       );
@@ -242,20 +235,30 @@ class DrawPanel extends StatelessWidget {
                 ),
               ),
               if (hasStrokes) ...<Widget>[
-                const SizedBox(width: 4),
-                IconButton(
-                  onPressed: controller.undoLastStroke,
-                  icon: const Icon(Icons.undo_rounded, size: 18),
+                const SizedBox(width: 6),
+                StudioPressable(
                   tooltip: labels.undo,
-                  color: theme.primaryTextColor,
-                  visualDensity: VisualDensity.compact,
+                  onTap: controller.undoLastStroke,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(
+                      StudioIcons.undo,
+                      size: 18,
+                      color: theme.primaryTextColor,
+                    ),
+                  ),
                 ),
-                IconButton(
-                  onPressed: controller.clearStrokes,
-                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                StudioPressable(
                   tooltip: labels.clearStrokes,
-                  color: theme.dangerColor,
-                  visualDensity: VisualDensity.compact,
+                  onTap: controller.clearStrokes,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(
+                      StudioIcons.deleteOutline,
+                      size: 18,
+                      color: theme.dangerColor,
+                    ),
+                  ),
                 ),
               ],
             ],

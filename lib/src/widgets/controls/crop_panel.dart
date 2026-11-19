@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../controller/photo_editor_controller.dart';
 import '../../models/crop_aspect_ratio.dart';
 import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
+import 'studio_primitives.dart';
 import 'studio_widgets.dart';
 
 /// Controls for interactive crop aspect ratios, 90° rotation, mirroring, and
@@ -48,21 +49,21 @@ class CropPanel extends StatelessWidget {
     final quickActions = Row(
       children: <Widget>[
         _TransformActionButton(
-          icon: Icons.rotate_90_degrees_ccw_rounded,
+          icon: StudioIcons.rotate90Ccw,
           tooltip: labels.rotateLeft,
           theme: theme,
           onTap: controller.rotateLeft,
         ),
         const SizedBox(width: 8),
         _TransformActionButton(
-          icon: Icons.rotate_90_degrees_cw_outlined,
+          icon: StudioIcons.rotate90Cw,
           tooltip: labels.rotateRight,
           theme: theme,
           onTap: controller.rotateRight,
         ),
         const SizedBox(width: 8),
         _TransformActionButton(
-          icon: Icons.flip_rounded,
+          icon: StudioIcons.flip,
           tooltip: labels.flipHorizontal,
           active: transform.flipHorizontal,
           theme: theme,
@@ -70,7 +71,7 @@ class CropPanel extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         _TransformActionButton(
-          icon: Icons.flip_rounded,
+          icon: StudioIcons.flip,
           quarterTurns: 1,
           tooltip: labels.flipVertical,
           active: transform.flipVertical,
@@ -82,7 +83,7 @@ class CropPanel extends StatelessWidget {
 
     final straightenSlider = StudioSliderRow(
       label: labels.straighten,
-      icon: Icons.straighten_rounded,
+      icon: StudioIcons.straighten,
       value: degrees,
       min: -45.0,
       max: 45.0,
@@ -150,20 +151,15 @@ class CropPanel extends StatelessWidget {
               Expanded(child: quickActions),
               if (!transform.isIdentity) ...<Widget>[
                 const SizedBox(width: 8),
-                TextButton(
+                StudioButton(
+                  label: labels.reset,
+                  foregroundColor: theme.accentColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
+                  fontSize: 12,
                   onPressed: controller.resetTransform,
-                  style: TextButton.styleFrom(
-                    foregroundColor: theme.accentColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    minimumSize: const Size(0, 34),
-                  ),
-                  child: Text(
-                    labels.reset,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
                 ),
               ],
             ],
@@ -215,30 +211,28 @@ class _TransformActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Tooltip(
-        message: tooltip,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            height: 36,
-            decoration: BoxDecoration(
-              color: active
-                  ? theme.accentColor.withValues(alpha: 0.16)
-                  : theme.elevatedSurfaceColor,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: active ? theme.accentColor : theme.borderColor,
-              ),
+      child: StudioPressable(
+        tooltip: tooltip,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          height: 36,
+          decoration: BoxDecoration(
+            color: active
+                ? theme.accentColor.withValues(alpha: 0.16)
+                : theme.elevatedSurfaceColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: active ? theme.accentColor : theme.borderColor,
             ),
-            child: Center(
-              child: RotatedBox(
-                quarterTurns: quarterTurns,
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: active ? theme.accentColor : theme.primaryTextColor,
-                ),
+          ),
+          child: Center(
+            child: RotatedBox(
+              quarterTurns: quarterTurns,
+              child: Icon(
+                icon,
+                size: 18,
+                color: active ? theme.accentColor : theme.primaryTextColor,
               ),
             ),
           ),
@@ -263,8 +257,9 @@ class _AspectRatioChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return StudioPressable(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(9),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

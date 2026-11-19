@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
+import '../controls/studio_primitives.dart';
 
-/// Modal studio dialog for entering or editing multi-line overlay text.
+/// Modal studio dialog for entering or editing multi-line overlay text, built
+/// purely on `flutter/widgets.dart`.
 class TextEditorDialog extends StatefulWidget {
   /// Creates a [TextEditorDialog].
   const TextEditorDialog({
@@ -35,14 +37,28 @@ class TextEditorDialog extends StatefulWidget {
     String initialText = '',
     bool isEditing = false,
   }) {
-    return showDialog<String>(
+    return showGeneralDialog<String>(
       context: context,
-      builder: (context) => TextEditorDialog(
+      barrierDismissible: true,
+      barrierLabel: labels.cancel,
+      barrierColor: StudioColors.black.withValues(alpha: 0.62),
+      transitionDuration: const Duration(milliseconds: 160),
+      pageBuilder: (dialogContext, _, _) => TextEditorDialog(
         theme: theme,
         labels: labels,
         initialText: initialText,
         isEditing: isEditing,
       ),
+      transitionBuilder: (_, anim, _, child) {
+        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOut);
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.94, end: 1.0).animate(curved),
+            child: child,
+          ),
+        );
+      },
     );
   }
 
@@ -52,16 +68,28 @@ class TextEditorDialog extends StatefulWidget {
 
 class _TextEditorDialogState extends State<TextEditorDialog> {
   late final TextEditingController _textController;
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _textController = TextEditingController(text: widget.initialText);
+    _textController.addListener(_handleTextChanged);
+    _focusNode.addListener(_handleTextChanged);
+  }
+
+  void _handleTextChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
+    _textController.removeListener(_handleTextChanged);
+    _focusNode.removeListener(_handleTextChanged);
     _textController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -73,87 +101,128 @@ class _TextEditorDialogState extends State<TextEditorDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
-    return Dialog(
-      backgroundColor: theme.surfaceColor,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.borderColor),
+    final viewInsets = MediaQuery.viewInsetsOf(context);
+
+    return DefaultTextStyle(
+      style: TextStyle(
+        color: theme.primaryTextColor,
+        fontSize: 14,
+        decoration: TextDecoration.none,
       ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Text(
-                widget.isEditing
-                    ? widget.labels.editText
-                    : widget.labels.addText,
-                style: TextStyle(
-                  color: theme.primaryTextColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _textController,
-                autofocus: true,
-                maxLines: 4,
-                minLines: 2,
-                style: TextStyle(color: theme.primaryTextColor, fontSize: 15),
-                cursorColor: theme.accentColor,
-                decoration: InputDecoration(
-                  hintText: widget.labels.textPlaceholder,
-                  hintStyle: TextStyle(color: theme.secondaryTextColor),
-                  filled: true,
-                  fillColor: theme.elevatedSurfaceColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: theme.borderColor),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: theme.accentColor,
-                      width: 1.5,
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 120),
+        padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + viewInsets.bottom),
+        child: Center(
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.surfaceColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: theme.borderColor),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: StudioColors.black.withValues(alpha: 0.45),
+                      blurRadius: 28,
+                      offset: const Offset(0, 12),
                     ),
-                  ),
+                  ],
                 ),
-                onSubmitted: (_) => _submit(),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                alignment: WrapAlignment.end,
-                spacing: 8,
-                runSpacing: 8,
-                children: <Widget>[
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.secondaryTextColor,
-                    ),
-                    child: Text(widget.labels.cancel),
-                  ),
-                  FilledButton(
-                    onPressed: _submit,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: theme.accentColor,
-                      foregroundColor: theme.onAccentColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Text(
+                      widget.isEditing
+                          ? widget.labels.editText
+                          : widget.labels.addText,
+                      style: TextStyle(
+                        color: theme.primaryTextColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    child: Text(
-                      widget.isEditing ? 'Save' : widget.labels.addText,
+                    const SizedBox(height: 14),
+                    GestureDetector(
+                      onTap: _focusNode.requestFocus,
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 72),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.elevatedSurfaceColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _focusNode.hasFocus
+                                ? theme.accentColor
+                                : theme.borderColor,
+                            width: _focusNode.hasFocus ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Stack(
+                          children: <Widget>[
+                            if (_textController.text.isEmpty)
+                              IgnorePointer(
+                                child: Text(
+                                  widget.labels.textPlaceholder,
+                                  style: TextStyle(
+                                    color: theme.secondaryTextColor,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            EditableText(
+                              controller: _textController,
+                              focusNode: _focusNode,
+                              autofocus: true,
+                              maxLines: 4,
+                              minLines: 2,
+                              style: TextStyle(
+                                color: theme.primaryTextColor,
+                                fontSize: 15,
+                                height: 1.35,
+                              ),
+                              cursorColor: theme.accentColor,
+                              backgroundCursorColor: theme.elevatedSurfaceColor,
+                              selectionColor: theme.accentColor.withValues(
+                                alpha: 0.35,
+                              ),
+                              onSubmitted: (_) => _submit(),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: <Widget>[
+                        StudioButton(
+                          label: widget.labels.cancel,
+                          foregroundColor: theme.secondaryTextColor,
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        StudioButton(
+                          label: widget.isEditing
+                              ? widget.labels.done
+                              : widget.labels.addText,
+                          backgroundColor: theme.accentColor,
+                          foregroundColor: theme.onAccentColor,
+                          fontWeight: FontWeight.w700,
+                          onPressed: _submit,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ),

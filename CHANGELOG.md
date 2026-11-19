@@ -1,3 +1,9 @@
+## 1.0.1
+
+* **Pure `flutter/widgets.dart` Architecture (Flutter 3.47+ Ready)**: Migrated the entire library, example app, and test suite off deprecated `package:flutter/material.dart` to pure `package:flutter/widgets.dart` with custom studio UI primitives (`StudioSlider`, `StudioButton`, `StudioPressable`, `StudioSpinner`, `StudioIcons`).
+* Eliminated all Flutter 3.47+ deprecation analyzer infos while keeping zero external runtime dependencies and full compatibility across `MaterialApp`, `CupertinoApp`, and `WidgetsApp`.
+* Polished bipolar slider drag-and-tap undo coalescing, focus border feedback in `TextEditorDialog`, localized edit-confirmation labels, and consistent rounded rotate icons.
+
 ## 1.0.0
 
 * Initial production release of `photo_editor_studio` — a pro-studio Flutter photo editor engineered with zero external runtime dependencies.

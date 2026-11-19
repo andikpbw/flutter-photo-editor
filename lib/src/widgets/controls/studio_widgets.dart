@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../models/photo_editor_theme.dart';
+import 'studio_primitives.dart';
 
 /// Crisp section header with an optional trailing action button.
 class StudioSectionHeader extends StatelessWidget {
@@ -42,7 +43,7 @@ class StudioSectionHeader extends StatelessWidget {
           ),
         ),
         if (actionLabel != null && onAction != null)
-          InkWell(
+          StudioPressable(
             onTap: onAction,
             borderRadius: BorderRadius.circular(6),
             child: Padding(
@@ -186,29 +187,16 @@ class StudioSliderRow extends StatelessWidget {
             ],
           ),
           SizedBox(
-            height: compact ? 28 : 30,
-            child: SliderTheme(
-              data: SliderThemeData(
-                trackHeight: 3.0,
-                activeTrackColor: theme.accentColor,
-                inactiveTrackColor: theme.borderColor,
-                thumbColor: Colors.white,
-                overlayColor: theme.accentColor.withValues(alpha: 0.18),
-                thumbShape: const RoundSliderThumbShape(
-                  enabledThumbRadius: 7.0,
-                  elevation: 2,
-                ),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 15),
-                trackShape: const RoundedRectSliderTrackShape(),
-              ),
-              child: Slider(
-                value: value.clamp(min, max),
-                min: min,
-                max: max,
-                onChanged: onChanged,
-                onChangeStart: onChangeStart,
-                onChangeEnd: onChangeEnd,
-              ),
+            height: compact ? 26 : 28,
+            child: StudioSlider(
+              value: value.clamp(min, max),
+              min: min,
+              max: max,
+              activeColor: theme.accentColor,
+              inactiveColor: theme.borderColor,
+              onChanged: onChanged,
+              onChangeStart: onChangeStart,
+              onChangeEnd: onChangeEnd,
             ),
           ),
         ],
@@ -246,7 +234,7 @@ class StudioColorSwatches extends StatelessWidget {
 
   Widget _buildSwatch(Color color) {
     final isSelected = color.toARGB32() == selectedColor.toARGB32();
-    return GestureDetector(
+    return StudioPressable(
       onTap: () => onSelected(color),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
@@ -267,7 +255,7 @@ class StudioColorSwatches extends StatelessWidget {
             color: color,
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.black.withValues(alpha: 0.18),
+              color: StudioColors.black.withValues(alpha: 0.18),
               width: 0.7,
             ),
           ),

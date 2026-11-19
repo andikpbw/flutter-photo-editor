@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:photo_editor_studio/photo_editor_studio.dart';
 
 void main() {
@@ -15,11 +15,17 @@ class PhotoEditorExampleApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return WidgetsApp(
       title: 'Photo Editor Studio',
+      color: const Color(0xFF4F8BFF),
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(useMaterial3: true),
       home: const ExampleHomePage(),
+      pageRouteBuilder: <T>(RouteSettings settings, WidgetBuilder builder) {
+        return PageRouteBuilder<T>(
+          settings: settings,
+          pageBuilder: (context, _, _) => builder(context),
+        );
+      },
     );
   }
 }
@@ -74,94 +80,168 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
     }
   }
 
+  Widget _actionChip({
+    required String label,
+    required VoidCallback? onTap,
+    bool primary = false,
+    bool active = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: MouseRegion(
+        cursor: onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: primary
+                ? const Color(0xFF4F8BFF)
+                : active
+                ? const Color(0xFF26334D)
+                : const Color(0xFF1A1F2E),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: primary || active
+                  ? const Color(0xFF4F8BFF)
+                  : const Color(0xFF2B3447),
+            ),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFFFFFFFF),
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              decoration: TextDecoration.none,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final previewBytes = _lastResult?.bytes ?? _sampleBytes;
-    return Scaffold(
-      backgroundColor: const Color(0xFF0C0E14),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF141822),
-        title: const Text('photo_editor_studio Demo'),
-        actions: <Widget>[
-          TextButton.icon(
-            onPressed: () => setState(() => _darkTheme = !_darkTheme),
-            icon: Icon(_darkTheme ? Icons.dark_mode : Icons.light_mode),
-            label: Text(_darkTheme ? 'Dark' : 'Light'),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF141822),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFF262D3D)),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: previewBytes != null
-                        ? Image.memory(previewBytes, fit: BoxFit.contain)
-                        : const Center(child: CircularProgressIndicator()),
-                  ),
+    return ColoredBox(
+      color: const Color(0xFF0C0E14),
+      child: DefaultTextStyle(
+        style: const TextStyle(
+          color: Color(0xFFF3F6FC),
+          fontSize: 14,
+          decoration: TextDecoration.none,
+        ),
+        child: SafeArea(
+          child: Column(
+            children: <Widget>[
+              Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF141822),
+                  border: Border(bottom: BorderSide(color: Color(0xFF262D3D))),
                 ),
-                const SizedBox(height: 18),
-                if (_lastResult != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Text(
-                      'Exported ${_lastResult!.width} × ${_lastResult!.height} '
-                      '(${_lastResult!.fileExtension.toUpperCase()}, '
-                      '${(_lastResult!.bytes.length / 1024).toStringAsFixed(1)} KB)',
-                      style: const TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 10,
-                  alignment: WrapAlignment.center,
+                child: Row(
                   children: <Widget>[
-                    SegmentedButton<PhotoExportFormat>(
-                      segments: const <ButtonSegment<PhotoExportFormat>>[
-                        ButtonSegment<PhotoExportFormat>(
-                          value: PhotoExportFormat.png,
-                          label: Text('PNG'),
-                        ),
-                        ButtonSegment<PhotoExportFormat>(
-                          value: PhotoExportFormat.jpeg,
-                          label: Text('JPEG'),
-                        ),
-                      ],
-                      selected: <PhotoExportFormat>{_exportFormat},
-                      onSelectionChanged: (set) =>
-                          setState(() => _exportFormat = set.first),
-                    ),
-                    FilledButton.icon(
-                      onPressed: _sampleBytes != null ? _openEditor : null,
-                      icon: const Icon(Icons.auto_fix_high_rounded),
-                      label: const Text('Open Photo Editor'),
-                    ),
-                    if (_lastResult != null)
-                      OutlinedButton.icon(
-                        onPressed: () => setState(() => _lastResult = null),
-                        icon: const Icon(Icons.restart_alt_rounded),
-                        label: const Text('Reset Preview'),
+                    const Text(
+                      'photo_editor_studio Demo',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                       ),
+                    ),
+                    const Spacer(),
+                    _actionChip(
+                      label: _darkTheme ? 'Theme: Dark' : 'Theme: Light',
+                      onTap: () => setState(() => _darkTheme = !_darkTheme),
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Expanded(
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF141822),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: const Color(0xFF262D3D),
+                                ),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: previewBytes != null
+                                  ? Image.memory(
+                                      previewBytes,
+                                      fit: BoxFit.contain,
+                                    )
+                                  : const Center(
+                                      child: Text('Generating sample...'),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          if (_lastResult != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: Text(
+                                'Exported ${_lastResult!.width} × ${_lastResult!.height} '
+                                '(${_lastResult!.fileExtension.toUpperCase()}, '
+                                '${(_lastResult!.bytes.length / 1024).toStringAsFixed(1)} KB)',
+                                style: const TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            alignment: WrapAlignment.center,
+                            children: <Widget>[
+                              _actionChip(
+                                label: 'PNG',
+                                active: _exportFormat == PhotoExportFormat.png,
+                                onTap: () => setState(
+                                  () => _exportFormat = PhotoExportFormat.png,
+                                ),
+                              ),
+                              _actionChip(
+                                label: 'JPEG',
+                                active: _exportFormat == PhotoExportFormat.jpeg,
+                                onTap: () => setState(
+                                  () => _exportFormat = PhotoExportFormat.jpeg,
+                                ),
+                              ),
+                              _actionChip(
+                                label: 'Open Photo Editor',
+                                primary: true,
+                                onTap: _sampleBytes != null
+                                    ? _openEditor
+                                    : null,
+                              ),
+                              if (_lastResult != null)
+                                _actionChip(
+                                  label: 'Reset Preview',
+                                  onTap: () =>
+                                      setState(() => _lastResult = null),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -177,7 +257,6 @@ Future<Uint8List> _createScenicSamplePng(int width, int height) async {
   final size = Size(width.toDouble(), height.toDouble());
   final rect = Offset.zero & size;
 
-  // Sunset sky gradient
   canvas.drawRect(
     rect,
     Paint()
@@ -194,7 +273,6 @@ Future<Uint8List> _createScenicSamplePng(int width, int height) async {
       ).createShader(rect),
   );
 
-  // Glowing sun
   final sunCenter = Offset(size.width * 0.52, size.height * 0.44);
   canvas.drawCircle(
     sunCenter,
@@ -205,14 +283,13 @@ Future<Uint8List> _createScenicSamplePng(int width, int height) async {
             colors: <Color>[
               const Color(0xFFFFF3C4),
               const Color(0xFFFFB703).withValues(alpha: 0.45),
-              Colors.transparent,
+              const Color(0x00000000),
             ],
           ).createShader(
             Rect.fromCircle(center: sunCenter, radius: size.height * 0.22),
           ),
   );
 
-  // Distant mountain range
   final backMountains = Path()
     ..moveTo(0, size.height * 0.64)
     ..lineTo(size.width * 0.16, size.height * 0.42)
@@ -226,7 +303,6 @@ Future<Uint8List> _createScenicSamplePng(int width, int height) async {
     ..close();
   canvas.drawPath(backMountains, Paint()..color = const Color(0xFF33416B));
 
-  // Foreground mountain silhouette
   final frontMountains = Path()
     ..moveTo(0, size.height * 0.68)
     ..lineTo(size.width * 0.22, size.height * 0.50)
@@ -239,7 +315,6 @@ Future<Uint8List> _createScenicSamplePng(int width, int height) async {
     ..close();
   canvas.drawPath(frontMountains, Paint()..color = const Color(0xFF1D2744));
 
-  // Calm reflective lake
   final lakeRect = Rect.fromLTWH(
     0,
     size.height * 0.66,
@@ -260,7 +335,6 @@ Future<Uint8List> _createScenicSamplePng(int width, int height) async {
       ).createShader(lakeRect),
   );
 
-  // Golden water shimmer lines
   final shimmerPaint = Paint()
     ..color = const Color(0x88FFD166)
     ..strokeCap = StrokeCap.round;

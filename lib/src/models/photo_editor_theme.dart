@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 /// Visual styling tokens for the `photo_editor_studio` UI.
 @immutable
@@ -30,7 +30,7 @@ class PhotoEditorTheme {
       elevatedSurfaceColor: const Color(0xFF1C202B),
       borderColor: const Color(0xFF282E3D),
       accentColor: accentColor,
-      onAccentColor: Colors.white,
+      onAccentColor: const Color(0xFFFFFFFF),
       primaryTextColor: const Color(0xFFF3F6FC),
       secondaryTextColor: const Color(0xFF949EB2),
       dangerColor: const Color(0xFFFF5C6C),
@@ -50,7 +50,7 @@ class PhotoEditorTheme {
       elevatedSurfaceColor: const Color(0xFFF3F5F9),
       borderColor: const Color(0xFFDDE3EE),
       accentColor: accentColor,
-      onAccentColor: Colors.white,
+      onAccentColor: const Color(0xFFFFFFFF),
       primaryTextColor: const Color(0xFF111827),
       secondaryTextColor: const Color(0xFF64748B),
       dangerColor: const Color(0xFFDC2626),

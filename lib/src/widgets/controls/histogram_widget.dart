@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../engine/histogram_calculator.dart';
 import '../../models/photo_editor_theme.dart';
+import 'studio_primitives.dart';
 
 /// Live Lightroom-style RGB & luminance histogram visualization widget.
 class PhotoHistogramView extends StatelessWidget {
@@ -117,8 +118,12 @@ class _HistogramPainter extends CustomPainter {
       canvas,
       size,
       data.luminance,
-      (isDark ? Colors.white : Colors.black).withValues(alpha: 0.14),
-      (isDark ? Colors.white : Colors.black).withValues(alpha: 0.55),
+      (isDark ? StudioColors.white : StudioColors.black).withValues(
+        alpha: 0.14,
+      ),
+      (isDark ? StudioColors.white : StudioColors.black).withValues(
+        alpha: 0.55,
+      ),
     );
   }
 

@@ -1,13 +1,14 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../models/drawing_stroke.dart';
 import '../models/overlay_layer.dart';
 import '../models/photo_edit_state.dart';
 import '../models/photo_frame.dart';
 import '../models/photo_transform.dart';
+import '../widgets/controls/studio_primitives.dart';
 import 'color_matrix.dart';
 
 /// Shared WYSIWYG rendering pipeline used by both the interactive canvas and
@@ -89,9 +90,8 @@ abstract final class PhotoSceneRenderer {
         frame.style == PhotoFrameStyle.polaroid) {
       final isDarkFrame = frame.color.computeLuminance() < 0.4;
       final bevelPaint = Paint()
-        ..color = (isDarkFrame ? Colors.white : Colors.black).withValues(
-          alpha: 0.12,
-        )
+        ..color = (isDarkFrame ? StudioColors.white : StudioColors.black)
+            .withValues(alpha: 0.12)
         ..style = PaintingStyle.stroke
         ..strokeWidth = math.max(1.0, outputSize.shortestSide * 0.002);
       if (cornerRadiusPx > 0.5) {
@@ -319,7 +319,7 @@ abstract final class PhotoSceneRenderer {
     if (needsOpacityLayer) {
       canvas.saveLayer(
         null,
-        Paint()..color = Colors.white.withValues(alpha: overlay.opacity),
+        Paint()..color = StudioColors.white.withValues(alpha: overlay.opacity),
       );
     }
 
@@ -469,7 +469,7 @@ abstract final class PhotoSceneRenderer {
           Paint()
             ..filterQuality = FilterQuality.low
             ..blendMode = BlendMode.multiply
-            ..color = Colors.white.withValues(alpha: darkenStrength)
+            ..color = StudioColors.white.withValues(alpha: darkenStrength)
             ..colorFilter = PhotoColorMatrix.isIdentity(composedMatrix)
                 ? null
                 : ColorFilter.matrix(composedMatrix),
@@ -553,9 +553,9 @@ abstract final class PhotoSceneRenderer {
     final shader = RadialGradient(
       radius: 0.88,
       colors: <Color>[
-        Colors.transparent,
-        Colors.black.withValues(alpha: clamped * 0.25),
-        Colors.black.withValues(alpha: clamped * 0.86),
+        StudioColors.transparent,
+        StudioColors.black.withValues(alpha: clamped * 0.25),
+        StudioColors.black.withValues(alpha: clamped * 0.86),
       ],
       stops: const <double>[0.42, 0.76, 1.0],
     ).createShader(rect);
@@ -597,7 +597,7 @@ abstract final class PhotoSceneRenderer {
       ui.PointMode.points,
       lightPts,
       Paint()
-        ..color = Colors.white.withValues(alpha: clamped * 0.16)
+        ..color = StudioColors.white.withValues(alpha: clamped * 0.16)
         ..strokeWidth = dotSize
         ..strokeCap = StrokeCap.square,
     );
@@ -605,7 +605,7 @@ abstract final class PhotoSceneRenderer {
       ui.PointMode.points,
       darkPts,
       Paint()
-        ..color = Colors.black.withValues(alpha: clamped * 0.18)
+        ..color = StudioColors.black.withValues(alpha: clamped * 0.18)
         ..strokeWidth = dotSize
         ..strokeCap = StrokeCap.square,
     );
@@ -753,7 +753,7 @@ abstract final class PhotoSceneRenderer {
         );
         canvas.drawRRect(
           rrect,
-          Paint()..color = Colors.white.withValues(alpha: 0.08),
+          Paint()..color = StudioColors.white.withValues(alpha: 0.08),
         );
         canvas.restore();
     }
@@ -769,7 +769,7 @@ abstract final class PhotoSceneRenderer {
         layer.hasShadow && layer.backgroundStyle == TextBackgroundStyle.none
         ? <Shadow>[
             Shadow(
-              color: Colors.black.withValues(alpha: 0.72),
+              color: StudioColors.black.withValues(alpha: 0.72),
               blurRadius: fontSize * 0.18,
               offset: Offset(0, fontSize * 0.06),
             ),
@@ -806,7 +806,7 @@ abstract final class PhotoSceneRenderer {
       text: TextSpan(
         text: layer.content,
         style: TextStyle(
-          color: Colors.white,
+          color: StudioColors.white,
           fontSize: fontSize,
           fontWeight: FontWeight.w800,
           fontFamily: layer.fontFamily,
@@ -891,14 +891,14 @@ abstract final class PhotoSceneRenderer {
             end: Alignment.bottomRight,
             colors: <Color>[
               layer.badgeColor,
-              Color.lerp(layer.badgeColor, Colors.black, 0.25)!,
+              Color.lerp(layer.badgeColor, StudioColors.black, 0.25)!,
             ],
           ).createShader(rect),
       );
       canvas.drawRRect(
         rrect,
         Paint()
-          ..color = Colors.white.withValues(alpha: 0.35)
+          ..color = StudioColors.white.withValues(alpha: 0.35)
           ..style = PaintingStyle.stroke
           ..strokeWidth = math.max(1.2, minDim * 0.003),
       );

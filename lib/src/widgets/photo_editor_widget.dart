@@ -3,8 +3,8 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 import '../controller/photo_editor_controller.dart';
 import '../engine/histogram_calculator.dart';
@@ -24,6 +24,7 @@ import 'controls/draw_panel.dart';
 import 'controls/filter_panel.dart';
 import 'controls/frame_panel.dart';
 import 'controls/sticker_panel.dart';
+import 'controls/studio_primitives.dart';
 import 'controls/text_panel.dart';
 import 'dialogs/text_editor_dialog.dart';
 
@@ -129,8 +130,10 @@ class PhotoEditor extends StatefulWidget {
     }
 
     return Navigator.of(context).push<PhotoEditorResult?>(
-      MaterialPageRoute<PhotoEditorResult?>(
-        builder: (routeContext) {
+      PageRouteBuilder<PhotoEditorResult?>(
+        transitionDuration: const Duration(milliseconds: 220),
+        reverseTransitionDuration: const Duration(milliseconds: 180),
+        pageBuilder: (routeContext, _, _) {
           void handleComplete(PhotoEditorResult result) {
             if (Navigator.of(routeContext).canPop()) {
               Navigator.of(routeContext).pop(result);
@@ -171,6 +174,9 @@ class PhotoEditor extends StatefulWidget {
             onComplete: handleComplete,
             onCancel: handleCancel,
           );
+        },
+        transitionsBuilder: (_, animation, _, child) {
+          return FadeTransition(opacity: animation, child: child);
         },
       ),
     );
@@ -218,7 +224,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
         maxHistoryLength: widget.config.maxHistoryLength,
         initialBrushColor: widget.config.brushColors.isNotEmpty
             ? widget.config.brushColors.first
-            : Colors.white,
+            : StudioColors.white,
       );
     }
     unawaited(_loadSourceImage());
@@ -366,7 +372,6 @@ class _PhotoEditorState extends State<PhotoEditor> {
       return;
     }
 
-    // Show the decoded image immediately without blocking on thumbnail/histogram prep.
     setState(() {
       _isLoading = false;
       _loadError = null;
@@ -496,7 +501,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
     }
     final defaultColor = widget.config.textColors.isNotEmpty
         ? widget.config.textColors.first
-        : Colors.white;
+        : StudioColors.white;
     _controller.addTextLayer(text: entered, color: defaultColor);
   }
 
@@ -557,19 +562,19 @@ class _PhotoEditorState extends State<PhotoEditor> {
   IconData _toolIcon(PhotoEditorTool tool) {
     switch (tool) {
       case PhotoEditorTool.crop:
-        return Icons.crop_rotate_rounded;
+        return StudioIcons.cropRotate;
       case PhotoEditorTool.filters:
-        return Icons.auto_fix_high_rounded;
+        return StudioIcons.autoFixHigh;
       case PhotoEditorTool.adjust:
-        return Icons.tune_rounded;
+        return StudioIcons.tune;
       case PhotoEditorTool.draw:
-        return Icons.draw_rounded;
+        return StudioIcons.draw;
       case PhotoEditorTool.text:
-        return Icons.title_rounded;
+        return StudioIcons.title;
       case PhotoEditorTool.stickers:
-        return Icons.emoji_emotions_outlined;
+        return StudioIcons.emojiEmotions;
       case PhotoEditorTool.frames:
-        return Icons.filter_frames_rounded;
+        return StudioIcons.filterFrames;
     }
   }
 
@@ -646,20 +651,30 @@ class _PhotoEditorState extends State<PhotoEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final content = Material(
+    final content = ColoredBox(
       color: _theme.canvasBackground,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final isDesktop = _isDesktopForWidth(constraints.maxWidth);
-              return isDesktop
-                  ? _buildDesktopLayout()
-                  : _buildMobileLayout(constraints.maxWidth);
+      child: DefaultTextStyle(
+        style: TextStyle(
+          color: _theme.primaryTextColor,
+          fontSize: 13,
+          decoration: TextDecoration.none,
+        ),
+        child: IconTheme(
+          data: IconThemeData(color: _theme.primaryTextColor),
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final isDesktop = _isDesktopForWidth(constraints.maxWidth);
+                  return isDesktop
+                      ? _buildDesktopLayout()
+                      : _buildMobileLayout(constraints.maxWidth);
+                },
+              );
             },
-          );
-        },
+          ),
+        ),
       ),
     );
 
@@ -722,13 +737,10 @@ class _PhotoEditorState extends State<PhotoEditor> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            SizedBox(
-              width: 30,
-              height: 30,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.6,
-                color: _theme.accentColor,
-              ),
+            StudioSpinner(
+              color: _theme.accentColor,
+              size: 30,
+              strokeWidth: 2.6,
             ),
             const SizedBox(height: 12),
             Text(
@@ -748,7 +760,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Icon(
-                Icons.broken_image_outlined,
+                StudioIcons.brokenImage,
                 size: 42,
                 color: _theme.secondaryTextColor,
               ),
@@ -781,7 +793,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
         ),
         if (_isExporting)
           ColoredBox(
-            color: Colors.black.withValues(alpha: 0.45),
+            color: StudioColors.black.withValues(alpha: 0.45),
             child: Center(
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -796,13 +808,10 @@ class _PhotoEditorState extends State<PhotoEditor> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        color: _theme.accentColor,
-                      ),
+                    StudioSpinner(
+                      color: _theme.accentColor,
+                      size: 18,
+                      strokeWidth: 2.2,
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -847,7 +856,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
             children: <Widget>[
               if (widget.config.showCloseButton) ...<Widget>[
                 _ToolbarIconButton(
-                  icon: Icons.close_rounded,
+                  icon: StudioIcons.closeRounded,
                   tooltip: _labels.cancel,
                   theme: _theme,
                   onPressed: widget.onCancel,
@@ -867,9 +876,9 @@ class _PhotoEditorState extends State<PhotoEditor> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
-                  Icons.photo_filter_rounded,
+                  StudioIcons.photoFilter,
                   size: 16,
-                  color: Colors.white,
+                  color: StudioColors.white,
                 ),
               ),
               const SizedBox(width: 10),
@@ -921,7 +930,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       _CompactMiniButton(
-                        icon: Icons.remove_rounded,
+                        icon: StudioIcons.remove,
                         theme: _theme,
                         onPressed: _controller.zoomScale > 1.01
                             ? () => _setZoom(_controller.zoomScale - 0.25)
@@ -945,7 +954,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
                         ),
                       ),
                       _CompactMiniButton(
-                        icon: Icons.add_rounded,
+                        icon: StudioIcons.add,
                         theme: _theme,
                         onPressed: _controller.zoomScale < 4.99
                             ? () => _setZoom(_controller.zoomScale + 0.25)
@@ -958,21 +967,21 @@ class _PhotoEditorState extends State<PhotoEditor> {
               ],
               // Undo / Redo / Split Compare / Reset
               _ToolbarIconButton(
-                icon: Icons.undo_rounded,
+                icon: StudioIcons.undo,
                 tooltip: _labels.undo,
                 theme: _theme,
                 onPressed: _controller.canUndo ? _controller.undo : null,
               ),
               const SizedBox(width: 4),
               _ToolbarIconButton(
-                icon: Icons.redo_rounded,
+                icon: StudioIcons.redo,
                 tooltip: _labels.redo,
                 theme: _theme,
                 onPressed: _controller.canRedo ? _controller.redo : null,
               ),
               const SizedBox(width: 4),
               _ToolbarIconButton(
-                icon: Icons.compare_rounded,
+                icon: StudioIcons.compare,
                 tooltip: _labels.compare,
                 active: _controller.isComparingOriginal,
                 theme: _theme,
@@ -985,45 +994,33 @@ class _PhotoEditorState extends State<PhotoEditor> {
               if (_controller.hasChanges) ...<Widget>[
                 const SizedBox(width: 4),
                 _ToolbarIconButton(
-                  icon: Icons.restart_alt_rounded,
+                  icon: StudioIcons.restartAlt,
                   tooltip: _labels.resetAll,
                   theme: _theme,
                   onPressed: _controller.resetAll,
                 ),
               ],
               const SizedBox(width: 12),
-              FilledButton.icon(
+              StudioButton(
+                label: _labels.done,
+                icon: _isExporting ? null : StudioIcons.check,
+                leading: _isExporting
+                    ? const StudioSpinner(
+                        color: StudioColors.white,
+                        size: 14,
+                        strokeWidth: 2,
+                      )
+                    : null,
+                backgroundColor: _theme.accentColor,
+                foregroundColor: _theme.onAccentColor,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 9,
+                ),
+                fontWeight: FontWeight.w700,
                 onPressed: _image != null && !_isExporting
                     ? _handleExport
                     : null,
-                icon: _isExporting
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.check_rounded, size: 17),
-                label: Text(
-                  _labels.done,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                style: FilledButton.styleFrom(
-                  backgroundColor: _theme.accentColor,
-                  foregroundColor: _theme.onAccentColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
               ),
             ],
           ),
@@ -1049,7 +1046,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
                     final selected = _controller.activeTool == tool;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 6),
-                      child: InkWell(
+                      child: StudioPressable(
                         onTap: () => _controller.setActiveTool(tool),
                         borderRadius: BorderRadius.circular(12),
                         child: AnimatedContainer(
@@ -1058,12 +1055,12 @@ class _PhotoEditorState extends State<PhotoEditor> {
                           decoration: BoxDecoration(
                             color: selected
                                 ? _theme.accentColor.withValues(alpha: 0.16)
-                                : Colors.transparent,
+                                : StudioColors.transparent,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: selected
                                   ? _theme.accentColor.withValues(alpha: 0.55)
-                                  : Colors.transparent,
+                                  : StudioColors.transparent,
                             ),
                           ),
                           child: Column(
@@ -1130,7 +1127,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
 
     Widget buildToolTab(PhotoEditorTool tool) {
       final selected = _controller.activeTool == tool;
-      return InkWell(
+      return StudioPressable(
         onTap: () => _controller.setActiveTool(tool),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1141,7 +1138,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
               decoration: BoxDecoration(
                 color: selected
                     ? _theme.accentColor.withValues(alpha: 0.16)
-                    : Colors.transparent,
+                    : StudioColors.transparent,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
@@ -1185,26 +1182,26 @@ class _PhotoEditorState extends State<PhotoEditor> {
               children: <Widget>[
                 if (widget.config.showCloseButton)
                   _ToolbarIconButton(
-                    icon: Icons.close_rounded,
+                    icon: StudioIcons.closeRounded,
                     tooltip: _labels.cancel,
                     theme: _theme,
                     onPressed: widget.onCancel,
                   ),
                 const Spacer(),
                 _ToolbarIconButton(
-                  icon: Icons.undo_rounded,
+                  icon: StudioIcons.undo,
                   tooltip: _labels.undo,
                   theme: _theme,
                   onPressed: _controller.canUndo ? _controller.undo : null,
                 ),
                 _ToolbarIconButton(
-                  icon: Icons.redo_rounded,
+                  icon: StudioIcons.redo,
                   tooltip: _labels.redo,
                   theme: _theme,
                   onPressed: _controller.canRedo ? _controller.redo : null,
                 ),
                 _ToolbarIconButton(
-                  icon: Icons.compare_rounded,
+                  icon: StudioIcons.compare,
                   tooltip: _labels.compare,
                   active: _controller.isComparingOriginal,
                   theme: _theme,
@@ -1216,44 +1213,33 @@ class _PhotoEditorState extends State<PhotoEditor> {
                 ),
                 if (_controller.hasChanges)
                   _ToolbarIconButton(
-                    icon: Icons.restart_alt_rounded,
+                    icon: StudioIcons.restartAlt,
                     tooltip: _labels.resetAll,
                     theme: _theme,
                     onPressed: _controller.resetAll,
                   ),
                 const SizedBox(width: 6),
-                FilledButton(
+                StudioButton(
+                  label: _labels.done,
+                  leading: _isExporting
+                      ? const StudioSpinner(
+                          color: StudioColors.white,
+                          size: 14,
+                          strokeWidth: 2,
+                        )
+                      : null,
+                  backgroundColor: _theme.accentColor,
+                  foregroundColor: _theme.onAccentColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
+                  borderRadius: 18,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
                   onPressed: _image != null && !_isExporting
                       ? _handleExport
                       : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _theme.accentColor,
-                    foregroundColor: _theme.onAccentColor,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    minimumSize: const Size(0, 34),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                  child: _isExporting
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          _labels.done,
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
                 ),
               ],
             ),
@@ -1325,30 +1311,28 @@ class _ToolbarIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(9),
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: active
-                ? theme.accentColor.withValues(alpha: 0.18)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-            border: active ? Border.all(color: theme.accentColor) : null,
-          ),
-          child: Icon(
-            icon,
-            size: 19,
-            color: !enabled
-                ? theme.secondaryTextColor.withValues(alpha: 0.35)
-                : active
-                ? theme.accentColor
-                : theme.primaryTextColor,
-          ),
+    return StudioPressable(
+      tooltip: tooltip,
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(9),
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: active
+              ? theme.accentColor.withValues(alpha: 0.18)
+              : StudioColors.transparent,
+          borderRadius: BorderRadius.circular(9),
+          border: active ? Border.all(color: theme.accentColor) : null,
+        ),
+        child: Icon(
+          icon,
+          size: 19,
+          color: !enabled
+              ? theme.secondaryTextColor.withValues(alpha: 0.35)
+              : active
+              ? theme.accentColor
+              : theme.primaryTextColor,
         ),
       ),
     );
@@ -1368,7 +1352,7 @@ class _CompactMiniButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return StudioPressable(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(6),
       child: Padding(

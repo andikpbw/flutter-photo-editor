@@ -2,7 +2,7 @@ name: photo_editor_studio
 description: >-
   A modern & professional Flutter photo editor library for editing images with
   filters, cropping, adjustments, drawing, text, and stickers across all platforms.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/andikpbw/flutter-photo-editor
 repository: https://github.com/andikpbw/flutter-photo-editor
 issue_tracker: https://github.com/andikpbw/flutter-photo-editor/issues

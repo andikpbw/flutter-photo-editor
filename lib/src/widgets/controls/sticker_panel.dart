@@ -1,11 +1,12 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../controller/photo_editor_controller.dart';
 import '../../models/overlay_layer.dart';
 import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
+import 'studio_primitives.dart';
 import 'studio_widgets.dart';
 
 /// Sticker, emoji, and crisp cross-platform vector studio badge gallery panel.
@@ -56,7 +57,7 @@ class StickerPanel extends StatelessWidget {
             const SizedBox(height: 10),
             StudioSliderRow(
               label: labels.textScale,
-              icon: Icons.zoom_out_map_rounded,
+              icon: StudioIcons.zoomOutMap,
               value: selectedSticker.scale,
               min: 0.4,
               max: 3.0,
@@ -76,7 +77,7 @@ class StickerPanel extends StatelessWidget {
             const SizedBox(height: 6),
             StudioSliderRow(
               label: labels.textRotation,
-              icon: Icons.rotate_right_rounded,
+              icon: StudioIcons.rotateRight,
               value: (selectedSticker.rotation * 180.0 / math.pi).clamp(
                 -180.0,
                 180.0,
@@ -99,7 +100,7 @@ class StickerPanel extends StatelessWidget {
             const SizedBox(height: 6),
             StudioSliderRow(
               label: labels.layerOpacity,
-              icon: Icons.opacity_rounded,
+              icon: StudioIcons.opacity,
               value: selectedSticker.opacity,
               min: 0.15,
               max: 1.0,
@@ -120,39 +121,34 @@ class StickerPanel extends StatelessWidget {
             Row(
               children: <Widget>[
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: StudioButton(
+                    label: labels.duplicateLayer,
+                    icon: StudioIcons.copy,
+                    iconSize: 15,
+                    foregroundColor: theme.primaryTextColor,
+                    borderColor: theme.borderColor,
+                    expand: true,
                     onPressed: controller.duplicateSelectedOverlay,
-                    icon: const Icon(Icons.copy_rounded, size: 15),
-                    label: Text(labels.duplicateLayer),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.primaryTextColor,
-                      side: BorderSide(color: theme.borderColor),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: StudioButton(
+                    label: labels.deleteLayer,
+                    icon: StudioIcons.deleteOutline,
+                    iconSize: 16,
+                    foregroundColor: theme.dangerColor,
+                    borderColor: theme.dangerColor.withValues(alpha: 0.5),
+                    expand: true,
                     onPressed: controller.deleteSelectedOverlay,
-                    icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                    label: Text(labels.deleteLayer),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.dangerColor,
-                      side: BorderSide(
-                        color: theme.dangerColor.withValues(alpha: 0.5),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
                   ),
                 ),
               ],
             ),
-            const Divider(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Container(height: 1, color: theme.borderColor),
+            ),
           ],
           if (studioBadges.isNotEmpty) ...<Widget>[
             const SizedBox(height: 10),
@@ -165,11 +161,12 @@ class StickerPanel extends StatelessWidget {
               spacing: 7,
               runSpacing: 7,
               children: studioBadges.map((badge) {
-                return GestureDetector(
+                return StudioPressable(
                   onTap: () => controller.addBadgeLayer(
                     badge,
                     badgeColor: theme.accentColor,
                   ),
+                  borderRadius: BorderRadius.circular(20),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 11,
@@ -187,7 +184,7 @@ class StickerPanel extends StatelessWidget {
                     child: Text(
                       badge,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: StudioColors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.6,
@@ -210,7 +207,7 @@ class StickerPanel extends StatelessWidget {
             itemCount: stickers.length,
             itemBuilder: (context, index) {
               final sticker = stickers[index];
-              return InkWell(
+              return StudioPressable(
                 onTap: () => controller.addStickerLayer(sticker),
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
@@ -260,12 +257,17 @@ class StickerPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                IconButton(
-                  onPressed: controller.deleteSelectedOverlay,
-                  icon: const Icon(Icons.delete_outline_rounded, size: 19),
-                  color: theme.dangerColor,
+                StudioPressable(
                   tooltip: labels.deleteLayer,
-                  visualDensity: VisualDensity.compact,
+                  onTap: controller.deleteSelectedOverlay,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(
+                      StudioIcons.deleteOutline,
+                      size: 19,
+                      color: theme.dangerColor,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -280,11 +282,12 @@ class StickerPanel extends StatelessWidget {
               separatorBuilder: (_, _) => const SizedBox(width: 6),
               itemBuilder: (context, index) {
                 final badge = studioBadges[index];
-                return GestureDetector(
+                return StudioPressable(
                   onTap: () => controller.addBadgeLayer(
                     badge,
                     badgeColor: theme.accentColor,
                   ),
+                  borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 11,
@@ -298,7 +301,7 @@ class StickerPanel extends StatelessWidget {
                       child: Text(
                         badge,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: StudioColors.white,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
@@ -319,8 +322,9 @@ class StickerPanel extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final sticker = stickers[index];
-              return GestureDetector(
+              return StudioPressable(
                 onTap: () => controller.addStickerLayer(sticker),
+                borderRadius: BorderRadius.circular(11),
                 child: Container(
                   width: 46,
                   height: 46,

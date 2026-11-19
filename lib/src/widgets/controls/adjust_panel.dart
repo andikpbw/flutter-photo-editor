@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../controller/photo_editor_controller.dart';
 import '../../engine/histogram_calculator.dart';
@@ -6,6 +6,7 @@ import '../../models/photo_adjustments.dart';
 import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
 import 'histogram_widget.dart';
+import 'studio_primitives.dart';
 import 'studio_widgets.dart';
 
 /// Tonal, color, optical, and texture adjustment controls paired with a live
@@ -43,33 +44,33 @@ class AdjustPanel extends StatelessWidget {
   static IconData _iconFor(PhotoAdjustmentType type) {
     switch (type) {
       case PhotoAdjustmentType.exposure:
-        return Icons.exposure_rounded;
+        return StudioIcons.exposure;
       case PhotoAdjustmentType.brightness:
-        return Icons.wb_sunny_outlined;
+        return StudioIcons.wbSunny;
       case PhotoAdjustmentType.contrast:
-        return Icons.contrast_rounded;
+        return StudioIcons.contrast;
       case PhotoAdjustmentType.highlights:
-        return Icons.brightness_high_rounded;
+        return StudioIcons.brightnessHigh;
       case PhotoAdjustmentType.shadows:
-        return Icons.brightness_2_outlined;
+        return StudioIcons.brightness2;
       case PhotoAdjustmentType.saturation:
-        return Icons.palette_outlined;
+        return StudioIcons.palette;
       case PhotoAdjustmentType.vibrance:
-        return Icons.color_lens_outlined;
+        return StudioIcons.colorLens;
       case PhotoAdjustmentType.warmth:
-        return Icons.thermostat_rounded;
+        return StudioIcons.thermostat;
       case PhotoAdjustmentType.tint:
-        return Icons.invert_colors_rounded;
+        return StudioIcons.invertColors;
       case PhotoAdjustmentType.clarity:
-        return Icons.auto_awesome_outlined;
+        return StudioIcons.autoAwesome;
       case PhotoAdjustmentType.fade:
-        return Icons.gradient_rounded;
+        return StudioIcons.gradient;
       case PhotoAdjustmentType.vignette:
-        return Icons.vignette_rounded;
+        return StudioIcons.vignette;
       case PhotoAdjustmentType.grain:
-        return Icons.grain_rounded;
+        return StudioIcons.grain;
       case PhotoAdjustmentType.blur:
-        return Icons.blur_on_rounded;
+        return StudioIcons.blurOn;
     }
   }
 

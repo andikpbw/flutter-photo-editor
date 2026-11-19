@@ -10,7 +10,7 @@
 ///
 /// ```dart
 /// import 'dart:typed_data';
-/// import 'package:flutter/material.dart';
+/// import 'package:flutter/widgets.dart';
 /// import 'package:photo_editor_studio/photo_editor_studio.dart';
 ///
 /// Future<void> openEditor(BuildContext context, Uint8List imageBytes) async {

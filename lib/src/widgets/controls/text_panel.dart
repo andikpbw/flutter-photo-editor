@@ -1,11 +1,12 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../controller/photo_editor_controller.dart';
 import '../../models/overlay_layer.dart';
 import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
+import 'studio_primitives.dart';
 import 'studio_widgets.dart';
 
 /// Controls for creating, styling, aligning, spacing, scaling, rotating,
@@ -64,29 +65,36 @@ class TextPanel extends StatelessWidget {
           Row(
             children: <Widget>[
               Expanded(
-                child: FilledButton.icon(
+                child: StudioButton(
+                  label: labels.addText,
+                  icon: StudioIcons.add,
+                  iconSize: 18,
+                  backgroundColor: theme.accentColor,
+                  foregroundColor: theme.onAccentColor,
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  expand: true,
                   onPressed: onAddText,
-                  icon: const Icon(Icons.add_rounded, size: 18),
-                  label: Text(labels.addText),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: theme.accentColor,
-                    foregroundColor: theme.onAccentColor,
-                    padding: const EdgeInsets.symmetric(vertical: 11),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
                 ),
               ),
               if (selectedText != null) ...<Widget>[
                 const SizedBox(width: 8),
-                IconButton.filledTonal(
-                  onPressed: () => onEditText(selectedText),
+                StudioPressable(
                   tooltip: labels.editText,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  style: IconButton.styleFrom(
-                    backgroundColor: theme.elevatedSurfaceColor,
-                    foregroundColor: theme.primaryTextColor,
+                  onTap: () => onEditText(selectedText),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: theme.elevatedSurfaceColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: theme.borderColor),
+                    ),
+                    child: Icon(
+                      StudioIcons.editOutlined,
+                      size: 18,
+                      color: theme.primaryTextColor,
+                    ),
                   ),
                 ),
               ],
@@ -127,7 +135,7 @@ class TextPanel extends StatelessWidget {
             const SizedBox(height: 14),
             StudioSliderRow(
               label: labels.textScale,
-              icon: Icons.zoom_out_map_rounded,
+              icon: StudioIcons.zoomOutMap,
               value: selectedText.scale,
               min: 0.4,
               max: 3.0,
@@ -146,7 +154,7 @@ class TextPanel extends StatelessWidget {
             const SizedBox(height: 8),
             StudioSliderRow(
               label: labels.textRotation,
-              icon: Icons.rotate_right_rounded,
+              icon: StudioIcons.rotateRight,
               value: (selectedText.rotation * 180.0 / math.pi).clamp(
                 -180.0,
                 180.0,
@@ -169,7 +177,7 @@ class TextPanel extends StatelessWidget {
             const SizedBox(height: 8),
             StudioSliderRow(
               label: labels.letterSpacing,
-              icon: Icons.space_bar_rounded,
+              icon: StudioIcons.spaceBar,
               value: selectedText.letterSpacing,
               min: -1.5,
               max: 10.0,
@@ -188,7 +196,7 @@ class TextPanel extends StatelessWidget {
             const SizedBox(height: 8),
             StudioSliderRow(
               label: labels.layerOpacity,
-              icon: Icons.opacity_rounded,
+              icon: StudioIcons.opacity,
               value: selectedText.opacity,
               min: 0.15,
               max: 1.0,
@@ -208,34 +216,26 @@ class TextPanel extends StatelessWidget {
             Row(
               children: <Widget>[
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: StudioButton(
+                    label: labels.duplicateLayer,
+                    icon: StudioIcons.copy,
+                    iconSize: 15,
+                    foregroundColor: theme.primaryTextColor,
+                    borderColor: theme.borderColor,
+                    expand: true,
                     onPressed: controller.duplicateSelectedOverlay,
-                    icon: const Icon(Icons.copy_rounded, size: 15),
-                    label: Text(labels.duplicateLayer),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.primaryTextColor,
-                      side: BorderSide(color: theme.borderColor),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: StudioButton(
+                    label: labels.deleteLayer,
+                    icon: StudioIcons.deleteOutline,
+                    iconSize: 16,
+                    foregroundColor: theme.dangerColor,
+                    borderColor: theme.dangerColor.withValues(alpha: 0.5),
+                    expand: true,
                     onPressed: controller.deleteSelectedOverlay,
-                    icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                    label: Text(labels.deleteLayer),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: theme.dangerColor,
-                      side: BorderSide(
-                        color: theme.dangerColor.withValues(alpha: 0.5),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -259,7 +259,7 @@ class TextPanel extends StatelessWidget {
               final active = layer.id == selectedText?.id;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: InkWell(
+                child: StudioPressable(
                   onTap: () => controller.selectOverlay(layer.id),
                   onDoubleTap: () => onEditText(layer),
                   borderRadius: BorderRadius.circular(9),
@@ -279,13 +279,13 @@ class TextPanel extends StatelessWidget {
                     ),
                     child: Row(
                       children: <Widget>[
-                        InkWell(
+                        StudioPressable(
                           onTap: () =>
                               controller.toggleOverlayVisibility(layer.id),
                           child: Icon(
                             layer.isVisible
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+                                ? StudioIcons.visibility
+                                : StudioIcons.visibilityOff,
                             size: 15,
                             color: layer.isVisible
                                 ? theme.accentColor
@@ -309,28 +309,28 @@ class TextPanel extends StatelessWidget {
                             ),
                           ),
                         ),
-                        InkWell(
+                        StudioPressable(
                           onTap: () => controller.moveOverlayForward(layer.id),
                           child: Icon(
-                            Icons.arrow_upward_rounded,
+                            StudioIcons.arrowUpward,
                             size: 14,
                             color: theme.secondaryTextColor,
                           ),
                         ),
                         const SizedBox(width: 4),
-                        InkWell(
+                        StudioPressable(
                           onTap: () => controller.moveOverlayBackward(layer.id),
                           child: Icon(
-                            Icons.arrow_downward_rounded,
+                            StudioIcons.arrowDownward,
                             size: 14,
                             color: theme.secondaryTextColor,
                           ),
                         ),
                         const SizedBox(width: 6),
-                        InkWell(
+                        StudioPressable(
                           onTap: () => controller.deleteOverlay(layer.id),
                           child: Icon(
-                            Icons.close_rounded,
+                            StudioIcons.closeRounded,
                             size: 15,
                             color: theme.secondaryTextColor,
                           ),
@@ -354,50 +354,55 @@ class TextPanel extends StatelessWidget {
           Row(
             children: <Widget>[
               Flexible(
-                child: FilledButton.icon(
+                child: StudioButton(
+                  label: labels.addText,
+                  icon: StudioIcons.add,
+                  backgroundColor: theme.accentColor,
+                  foregroundColor: theme.onAccentColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   onPressed: onAddText,
-                  icon: const Icon(Icons.add_rounded, size: 17),
-                  label: Text(
-                    labels.addText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: theme.accentColor,
-                    foregroundColor: theme.onAccentColor,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    minimumSize: const Size(0, 36),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
                 ),
               ),
               if (selectedText != null) ...<Widget>[
-                const SizedBox(width: 6),
-                IconButton(
-                  onPressed: () => onEditText(selectedText),
-                  icon: const Icon(Icons.edit_outlined, size: 18),
+                const SizedBox(width: 8),
+                StudioPressable(
                   tooltip: labels.editText,
-                  color: theme.primaryTextColor,
-                  visualDensity: VisualDensity.compact,
+                  onTap: () => onEditText(selectedText),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(
+                      StudioIcons.editOutlined,
+                      size: 18,
+                      color: theme.primaryTextColor,
+                    ),
+                  ),
                 ),
-                IconButton(
-                  onPressed: controller.duplicateSelectedOverlay,
-                  icon: const Icon(Icons.copy_rounded, size: 17),
+                StudioPressable(
                   tooltip: labels.duplicateLayer,
-                  color: theme.primaryTextColor,
-                  visualDensity: VisualDensity.compact,
+                  onTap: controller.duplicateSelectedOverlay,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(
+                      StudioIcons.copy,
+                      size: 17,
+                      color: theme.primaryTextColor,
+                    ),
+                  ),
                 ),
-                IconButton(
-                  onPressed: controller.deleteSelectedOverlay,
-                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                StudioPressable(
                   tooltip: labels.deleteLayer,
-                  color: theme.dangerColor,
-                  visualDensity: VisualDensity.compact,
+                  onTap: controller.deleteSelectedOverlay,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(
+                      StudioIcons.deleteOutline,
+                      size: 18,
+                      color: theme.dangerColor,
+                    ),
+                  ),
                 ),
               ],
             ],
@@ -456,10 +461,11 @@ class _BackgroundStyleRow extends StatelessWidget {
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2.5),
-            child: GestureDetector(
+            child: StudioPressable(
               onTap: () => controller.updateOverlay(
                 layer.copyWith(backgroundStyle: style),
               ),
+              borderRadius: BorderRadius.circular(8),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 140),
                 padding: const EdgeInsets.symmetric(vertical: 6),
@@ -518,8 +524,9 @@ class _TypographyRow extends StatelessWidget {
       return Expanded(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2.5),
-          child: GestureDetector(
+          child: StudioPressable(
             onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
             child: Container(
               height: 32,
               decoration: BoxDecoration(
@@ -545,7 +552,7 @@ class _TypographyRow extends StatelessWidget {
     return Row(
       children: <Widget>[
         pill(
-          icon: Icons.format_bold_rounded,
+          icon: StudioIcons.formatBold,
           active: isBold,
           onTap: () => controller.updateOverlay(
             layer.copyWith(
@@ -554,7 +561,7 @@ class _TypographyRow extends StatelessWidget {
           ),
         ),
         pill(
-          icon: Icons.format_italic_rounded,
+          icon: StudioIcons.formatItalic,
           active: isItalic,
           onTap: () => controller.updateOverlay(
             layer.copyWith(
@@ -563,21 +570,21 @@ class _TypographyRow extends StatelessWidget {
           ),
         ),
         pill(
-          icon: Icons.format_align_left_rounded,
+          icon: StudioIcons.formatAlignLeft,
           active: layer.textAlign == TextAlign.left,
           onTap: () => controller.updateOverlay(
             layer.copyWith(textAlign: TextAlign.left),
           ),
         ),
         pill(
-          icon: Icons.format_align_center_rounded,
+          icon: StudioIcons.formatAlignCenter,
           active: layer.textAlign == TextAlign.center,
           onTap: () => controller.updateOverlay(
             layer.copyWith(textAlign: TextAlign.center),
           ),
         ),
         pill(
-          icon: Icons.format_align_right_rounded,
+          icon: StudioIcons.formatAlignRight,
           active: layer.textAlign == TextAlign.right,
           onTap: () => controller.updateOverlay(
             layer.copyWith(textAlign: TextAlign.right),

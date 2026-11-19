@@ -1,6 +1,6 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:photo_editor_studio/photo_editor_studio.dart';
 
@@ -192,48 +192,48 @@ void main() {
                 Offset(0.4, 0.5),
                 Offset(0.8, 0.3),
               ],
-              color: Colors.white,
+              color: Color(0xFFFFFFFF),
               strokeWidth: 0.02,
             ),
             DrawingStroke(
               id: 's2',
               points: <Offset>[Offset(0.2, 0.7), Offset(0.7, 0.8)],
-              color: Colors.amber,
+              color: Color(0xFFFFC107),
               strokeWidth: 0.02,
               tool: BrushTool.arrow,
             ),
             DrawingStroke(
               id: 's3',
               points: <Offset>[Offset(0.2, 0.2), Offset(0.5, 0.5)],
-              color: Colors.cyan,
+              color: Color(0xFF00BCD4),
               strokeWidth: 0.015,
               tool: BrushTool.rectangle,
             ),
             DrawingStroke(
               id: 's4',
               points: <Offset>[Offset(0.5, 0.5), Offset(0.8, 0.8)],
-              color: Colors.pink,
+              color: Color(0xFFE91E63),
               strokeWidth: 0.015,
               tool: BrushTool.oval,
             ),
             DrawingStroke(
               id: 's5',
               points: <Offset>[Offset(0.1, 0.6), Offset(0.35, 0.85)],
-              color: Colors.black,
+              color: Color(0xFF000000),
               strokeWidth: 0.015,
               tool: BrushTool.blurRect,
             ),
             DrawingStroke(
               id: 's6',
               points: <Offset>[Offset(0.1, 0.1), Offset(0.3, 0.15)],
-              color: Colors.black,
+              color: Color(0xFF000000),
               strokeWidth: 0.015,
               tool: BrushTool.filledRectangle,
             ),
             DrawingStroke(
               id: 's7',
               points: <Offset>[Offset(0.1, 0.9), Offset(0.9, 0.9)],
-              color: Colors.white,
+              color: Color(0xFFFFFFFF),
               strokeWidth: 0.01,
               tool: BrushTool.line,
             ),

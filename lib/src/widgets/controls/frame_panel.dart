@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../controller/photo_editor_controller.dart';
 import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
 import '../../models/photo_frame.dart';
+import 'studio_primitives.dart';
 import 'studio_widgets.dart';
 
 /// Studio frame, museum mat, Polaroid, cinema letterbox, and rounded-card
@@ -37,17 +38,17 @@ class FramePanel extends StatelessWidget {
   static IconData _iconFor(PhotoFrameStyle style) {
     switch (style) {
       case PhotoFrameStyle.none:
-        return Icons.block_rounded;
+        return StudioIcons.block;
       case PhotoFrameStyle.minimal:
-        return Icons.crop_din_rounded;
+        return StudioIcons.cropDin;
       case PhotoFrameStyle.gallery:
-        return Icons.filter_frames_rounded;
+        return StudioIcons.filterFrames;
       case PhotoFrameStyle.polaroid:
-        return Icons.photo_camera_front_outlined;
+        return StudioIcons.photoCameraFront;
       case PhotoFrameStyle.cinema:
-        return Icons.theaters_rounded;
+        return StudioIcons.theaters;
       case PhotoFrameStyle.rounded:
-        return Icons.rounded_corner_rounded;
+        return StudioIcons.roundedCorner;
     }
   }
 
@@ -58,7 +59,7 @@ class FramePanel extends StatelessWidget {
 
     final thicknessSlider = StudioSliderRow(
       label: labels.frameThickness,
-      icon: Icons.border_outer_rounded,
+      icon: StudioIcons.borderOuter,
       value: frame.thickness,
       min: 0.05,
       max: 1.0,
@@ -74,7 +75,7 @@ class FramePanel extends StatelessWidget {
 
     final radiusSlider = StudioSliderRow(
       label: labels.frameCornerRadius,
-      icon: Icons.rounded_corner_rounded,
+      icon: StudioIcons.roundedCorner,
       value: frame.cornerRadius,
       min: 0.0,
       max: 1.0,
@@ -108,7 +109,7 @@ class FramePanel extends StatelessWidget {
             childAspectRatio: 1.05,
             children: PhotoFrameStyle.values.map((style) {
               final selected = frame.style == style;
-              return InkWell(
+              return StudioPressable(
                 onTap: () => controller.setFrameStyle(style),
                 borderRadius: BorderRadius.circular(10),
                 child: AnimatedContainer(
@@ -202,8 +203,9 @@ class FramePanel extends StatelessWidget {
               itemBuilder: (context, index) {
                 final style = PhotoFrameStyle.values[index];
                 final selected = frame.style == style;
-                return GestureDetector(
+                return StudioPressable(
                   onTap: () => controller.setFrameStyle(style),
+                  borderRadius: BorderRadius.circular(10),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 140),
                     width: 68,

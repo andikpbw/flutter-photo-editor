@@ -1,11 +1,12 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../controller/photo_editor_controller.dart';
 import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
 import '../../models/photo_filter.dart';
+import 'studio_primitives.dart';
 import 'studio_widgets.dart';
 
 /// Color-grading filter selector panel with category tabs, live image
@@ -92,7 +93,7 @@ class FilterPanel extends StatelessWidget {
     final intensityWidget = !activeFilter.isOriginal
         ? StudioSliderRow(
             label: labels.filterIntensity,
-            icon: Icons.opacity_rounded,
+            icon: StudioIcons.opacity,
             value: intensity,
             min: 0.0,
             max: 1.0,

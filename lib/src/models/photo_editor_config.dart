@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import 'crop_aspect_ratio.dart';
 import 'photo_adjustments.dart';

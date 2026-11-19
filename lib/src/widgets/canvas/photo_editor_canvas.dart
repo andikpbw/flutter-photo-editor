@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../controller/photo_editor_controller.dart';
 import '../../engine/photo_scene_renderer.dart';
@@ -12,6 +12,7 @@ import '../../models/photo_editor_config.dart';
 import '../../models/photo_editor_theme.dart';
 import '../../models/photo_frame.dart';
 import '../../models/photo_transform.dart';
+import '../controls/studio_primitives.dart';
 import 'crop_overlay.dart';
 
 /// Interactive studio canvas that renders the live edited photo, studio frames,
@@ -226,7 +227,7 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                   decoration: BoxDecoration(
                     boxShadow: <BoxShadow>[
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.42),
+                        color: StudioColors.black.withValues(alpha: 0.42),
                         blurRadius: 28,
                         offset: const Offset(0, 12),
                       ),
@@ -379,16 +380,18 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.72),
+                              color: StudioColors.black.withValues(alpha: 0.72),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.22),
+                                color: StudioColors.white.withValues(
+                                  alpha: 0.22,
+                                ),
                               ),
                             ),
                             child: Text(
                               widget.originalBadgeLabel,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: StudioColors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 1.2,
@@ -569,12 +572,15 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                         decoration: BoxDecoration(
                           color: theme.dangerColor,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
+                          border: Border.all(
+                            color: StudioColors.white,
+                            width: 1.5,
+                          ),
                         ),
                         child: const Icon(
-                          Icons.close,
+                          StudioIcons.close,
                           size: 14,
-                          color: Colors.white,
+                          color: StudioColors.white,
                         ),
                       ),
                     ),
@@ -618,12 +624,15 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                         decoration: BoxDecoration(
                           color: theme.accentColor,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
+                          border: Border.all(
+                            color: StudioColors.white,
+                            width: 1.5,
+                          ),
                         ),
                         child: const Icon(
-                          Icons.open_in_full,
+                          StudioIcons.openInFull,
                           size: 13,
-                          color: Colors.white,
+                          color: StudioColors.white,
                         ),
                       ),
                     ),
@@ -681,10 +690,10 @@ class _SplitCompareCurtain extends StatelessWidget {
                 child: Container(
                   width: 2.0,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.92),
+                    color: StudioColors.white.withValues(alpha: 0.92),
                     boxShadow: <BoxShadow>[
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.55),
+                        color: StudioColors.black.withValues(alpha: 0.55),
                         blurRadius: 6,
                       ),
                     ],
@@ -700,9 +709,9 @@ class _SplitCompareCurtain extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.72),
+                    color: StudioColors.black.withValues(alpha: 0.72),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2.0),
+                    border: Border.all(color: StudioColors.white, width: 2.0),
                     boxShadow: <BoxShadow>[
                       BoxShadow(
                         color: accentColor.withValues(alpha: 0.45),
@@ -711,9 +720,9 @@ class _SplitCompareCurtain extends StatelessWidget {
                     ],
                   ),
                   child: const Icon(
-                    Icons.compare_arrows_rounded,
+                    StudioIcons.compareArrows,
                     size: 18,
-                    color: Colors.white,
+                    color: StudioColors.white,
                   ),
                 ),
               ),
@@ -754,14 +763,14 @@ class _SplitBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: accent != null
             ? accent!.withValues(alpha: 0.85)
-            : Colors.black.withValues(alpha: 0.68),
+            : StudioColors.black.withValues(alpha: 0.68),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        border: Border.all(color: StudioColors.white.withValues(alpha: 0.25)),
       ),
       child: Text(
         label,
         style: const TextStyle(
-          color: Colors.white,
+          color: StudioColors.white,
           fontSize: 10.5,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.0,

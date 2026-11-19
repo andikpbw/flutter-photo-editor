@@ -1,9 +1,10 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../models/photo_editor_theme.dart';
 import '../../models/photo_transform.dart';
+import '../controls/studio_primitives.dart';
 
 enum _CropDragZone {
   none,
@@ -351,16 +352,16 @@ class _CropOverlayState extends State<CropOverlay> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.72),
+                        color: StudioColors.black.withValues(alpha: 0.72),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.16),
+                          color: StudioColors.white.withValues(alpha: 0.16),
                         ),
                       ),
                       child: Text(
                         '$outW × $outH',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: StudioColors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.3,
@@ -437,7 +438,7 @@ class _CropOverlayPainter extends CustomPainter {
       math.min(cropRect.width, cropRect.height) * 0.28,
     );
     final handlePaint = Paint()
-      ..color = isDragging ? accentColor : Colors.white
+      ..color = isDragging ? accentColor : StudioColors.white
       ..strokeWidth = 3.2
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -458,7 +459,7 @@ class _CropOverlayPainter extends CustomPainter {
       math.min(cropRect.width, cropRect.height) * 0.2,
     );
     final edgePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.92)
+      ..color = StudioColors.white.withValues(alpha: 0.92)
       ..strokeWidth = 2.6
       ..strokeCap = StrokeCap.round;
 

@@ -1,9 +1,22 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:photo_editor_studio/photo_editor_studio.dart';
+
+Widget _wrapTestApp(Widget home) {
+  return WidgetsApp(
+    color: const Color(0xFF4F8BFF),
+    home: home,
+    pageRouteBuilder: <T>(RouteSettings settings, WidgetBuilder builder) {
+      return PageRouteBuilder<T>(
+        settings: settings,
+        pageBuilder: (context, _, _) => builder(context),
+      );
+    },
+  );
+}
 
 Future<ui.Image> _buildTestImage(int w, int h) async {
   final recorder = ui.PictureRecorder();
@@ -36,7 +49,7 @@ Future<Uint8List> _buildTestPng(int w, int h) async {
 void main() {
   group('PhotoEditor responsive widget tests', () {
     testWidgets(
-      'Mobile viewport (390x844) navigates all 6 tools without overflow',
+      'Mobile viewport (390x844) navigates all 7 tools without overflow',
       (tester) async {
         tester.view.physicalSize = const Size(390, 844);
         tester.view.devicePixelRatio = 1.0;
@@ -51,8 +64,8 @@ void main() {
 
         PhotoEditorResult? exported;
         await tester.pumpWidget(
-          MaterialApp(
-            home: PhotoEditor.image(
+          _wrapTestApp(
+            PhotoEditor.image(
               image,
               controller: controller,
               onComplete: (result) => exported = result,
@@ -86,7 +99,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(controller.state.frame.style, PhotoFrameStyle.polaroid);
 
-        // Add a studio badge & sticker.
+        // Add a sticker.
         await tester.tap(find.text('Stickers'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('✨'));
@@ -98,17 +111,17 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('Add Text'));
         await tester.pumpAndSettle();
-        await tester.enterText(find.byType(TextField), 'Humanize AI');
+        await tester.enterText(find.byType(EditableText), 'Humanize AI');
         await tester.tap(find.text('Add Text').last);
         await tester.pumpAndSettle();
         expect(controller.state.overlays.length, 2);
 
         // Toggle interactive Split-Screen Before/After Compare curtain.
-        await tester.tap(find.byIcon(Icons.compare_rounded));
+        await tester.tap(find.bySemanticsLabel('Split Compare'));
         await tester.pumpAndSettle();
         expect(find.text('BEFORE'), findsOneWidget);
         expect(find.text('AFTER'), findsOneWidget);
-        await tester.tap(find.byIcon(Icons.compare_rounded));
+        await tester.tap(find.bySemanticsLabel('Split Compare'));
         await tester.pumpAndSettle();
 
         // Export and verify result.
@@ -142,8 +155,8 @@ void main() {
         addTearDown(controller.dispose);
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: PhotoEditor.image(
+          _wrapTestApp(
+            PhotoEditor.image(
               image,
               controller: controller,
               config: PhotoEditorConfig(theme: PhotoEditorTheme.light()),
@@ -179,12 +192,12 @@ void main() {
         // Rotate right updates dimensions badge to 240 x 320.
         await tester.tap(find.text('Crop'));
         await tester.pumpAndSettle();
-        await tester.tap(find.byTooltip('Rotate Right'));
+        await tester.tap(find.bySemanticsLabel('Rotate Right'));
         await tester.pumpAndSettle();
         expect(find.text('240 × 320'), findsOneWidget);
 
         // Undo restores 320 x 240.
-        await tester.tap(find.byTooltip('Undo'));
+        await tester.tap(find.bySemanticsLabel('Undo'));
         await tester.pumpAndSettle();
         expect(find.text('320 × 240'), findsOneWidget);
         expect(tester.takeException(), isNull);
@@ -203,8 +216,8 @@ void main() {
       var cancelled = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: PhotoEditor.memory(pngBytes!, onCancel: () => cancelled = true),
+        _wrapTestApp(
+          PhotoEditor.memory(pngBytes!, onCancel: () => cancelled = true),
         ),
       );
       await tester.runAsync(
@@ -212,7 +225,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Cancel'));
+      await tester.tap(find.bySemanticsLabel('Cancel'));
       await tester.pumpAndSettle();
       expect(cancelled, isTrue);
       expect(tester.takeException(), isNull);
@@ -229,7 +242,7 @@ void main() {
         final image = await tester.runAsync(() => _buildTestImage(160, 120));
         addTearDown(image!.dispose);
 
-        await tester.pumpWidget(MaterialApp(home: PhotoEditor.image(image)));
+        await tester.pumpWidget(_wrapTestApp(PhotoEditor.image(image)));
         await tester.pumpAndSettle();
 
         for (final tab in <String>[
@@ -262,19 +275,14 @@ void main() {
 
         PhotoEditorResult? routeResult;
         await tester.pumpWidget(
-          MaterialApp(
-            home: Builder(
-              builder: (context) => Scaffold(
-                body: Center(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      routeResult = await PhotoEditor.open(
-                        context,
-                        image: image,
-                      );
-                    },
-                    child: const Text('Launch'),
-                  ),
+          _wrapTestApp(
+            Builder(
+              builder: (context) => Center(
+                child: GestureDetector(
+                  onTap: () async {
+                    routeResult = await PhotoEditor.open(context, image: image);
+                  },
+                  child: const Text('Launch'),
                 ),
               ),
             ),
@@ -319,7 +327,7 @@ void main() {
       addTearDown(controller.dispose);
 
       await tester.pumpWidget(
-        MaterialApp(home: PhotoEditor.image(image, controller: controller)),
+        _wrapTestApp(PhotoEditor.image(image, controller: controller)),
       );
       await tester.pumpAndSettle();
 
@@ -338,5 +346,61 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+      'Slider drag produces single undo step and TextEditorDialog creates text layer',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final image = await tester.runAsync(() => _buildTestImage(240, 180));
+        addTearDown(image!.dispose);
+
+        final controller = PhotoEditorController(
+          initialTool: PhotoEditorTool.adjust,
+        );
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          _wrapTestApp(PhotoEditor.image(image, controller: controller)),
+        );
+        await tester.pumpAndSettle();
+
+        // Drag the Exposure slider (directly below the 'Exposure' text label).
+        final exposureLabelRect = tester.getRect(find.text('Exposure').first);
+        final sliderPoint = Offset(
+          exposureLabelRect.left + 80,
+          exposureLabelRect.bottom + 14,
+        );
+        final drag = await tester.startGesture(sliderPoint);
+        await drag.moveBy(const Offset(60, 0));
+        await drag.up();
+        await tester.pumpAndSettle();
+
+        expect(controller.state.adjustments.exposure, greaterThan(0.0));
+        expect(controller.canUndo, isTrue);
+        controller.undo();
+        expect(controller.state.adjustments.exposure, 0.0);
+        expect(controller.canUndo, isFalse);
+
+        // Open Text tool, launch TextEditorDialog, type text, and submit.
+        await tester.tap(find.text('Text'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Add Text'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(EditableText), 'Pure Widgets');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Add Text').last);
+        await tester.pumpAndSettle();
+
+        expect(controller.state.overlays.length, 1);
+        final layer = controller.state.overlays.first as TextOverlayLayer;
+        expect(layer.text, 'Pure Widgets');
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }
