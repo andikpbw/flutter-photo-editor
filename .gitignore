@@ -1,0 +1,24 @@
+# Dart & Flutter
+.dart_tool/
+.packages
+.pub/
+build/
+coverage/
+doc/api/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Example generated files
+example/.dart_tool/
+example/build/
+example/pubspec.lock
+pubspec.lock

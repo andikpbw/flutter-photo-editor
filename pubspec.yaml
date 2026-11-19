@@ -1,0 +1,43 @@
+name: photo_editor
+description: >-
+  A modern & professional Flutter photo editor library for editing images with
+  filters, cropping, adjustments, drawing, text, and stickers across all platforms.
+version: 1.0.0
+homepage: https://github.com/andikpbw/flutter-photo-editor
+repository: https://github.com/andikpbw/flutter-photo-editor
+issue_tracker: https://github.com/andikpbw/flutter-photo-editor/issues
+funding:
+  - https://humanize.id
+
+topics:
+  - photo-editor
+  - image-editor
+  - image-cropper
+  - image-filters
+  - flutter
+
+screenshots:
+  - description: 'Desktop 3-pane studio layout with live filters, adjustments, crop, and text overlays.'
+    path: doc/screenshots/demo_desktop.gif
+  - description: 'Mobile adaptive studio layout running real-time photo editing workflows.'
+    path: doc/screenshots/demo_mobile.gif
+  - description: 'Desktop studio precision adjustment inspector.'
+    path: doc/screenshots/preview_desktop.png
+  - description: 'Mobile photo editor text overlay and styling studio.'
+    path: doc/screenshots/preview_mobile.png
+
+environment:
+  sdk: ^3.8.0
+  flutter: '>=3.32.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
