@@ -155,7 +155,7 @@ final PhotoEditorResult exported = await PhotoExportEngine.export(
 );
 ```
 
-### 4. Custom Color Filters & Full Localization
+### 4. Custom Color Filters & Custom Labels / Localization
 
 ```dart
 const customFilter = PhotoFilter(
@@ -173,16 +173,16 @@ const customFilter = PhotoFilter(
 final config = PhotoEditorConfig(
   filters: <PhotoFilter>[...PhotoFilters.presets, customFilter],
   labels: const PhotoEditorLabels(
-    title: 'Editor Foto',
-    done: 'Simpan',
-    cancel: 'Batal',
-    cropTab: 'Potong',
-    filtersTab: 'Filter',
-    adjustTab: 'Sesuaikan',
-    drawTab: 'Gambar',
-    textTab: 'Teks',
-    stickersTab: 'Stiker',
-    framesTab: 'Bingkai',
+    title: 'Studio Editor',
+    done: 'Save Photo',
+    cancel: 'Discard',
+    cropTab: 'Crop',
+    filtersTab: 'Presets',
+    adjustTab: 'Tone',
+    drawTab: 'Markup',
+    textTab: 'Type',
+    stickersTab: 'Badges',
+    framesTab: 'Borders',
   ),
 );
 ```
