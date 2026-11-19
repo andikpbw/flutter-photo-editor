@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 /// Background presentation style for a [TextOverlayLayer].
 enum TextBackgroundStyle {
-  /// Plain text with subtle drop shadow for legibility.
+  /// Plain text with optional drop shadow for legibility.
   none,
 
   /// Solid filled rounded pill behind the text.
@@ -30,6 +30,8 @@ sealed class PhotoOverlayLayer {
     required this.position,
     this.scale = 1.0,
     this.rotation = 0.0,
+    this.opacity = 1.0,
+    this.isVisible = true,
   });
 
   /// Restores either a [TextOverlayLayer] or [StickerOverlayLayer] from JSON.
@@ -53,18 +55,28 @@ sealed class PhotoOverlayLayer {
   /// Clockwise rotation angle in radians.
   final double rotation;
 
-  /// Returns a copy with updated transform properties.
+  /// Layer opacity multiplier (`0.1` to `1.0`).
+  final double opacity;
+
+  /// Whether this layer is rendered on the canvas and in exports.
+  final bool isVisible;
+
+  /// Returns a copy with updated transform or visibility properties.
   PhotoOverlayLayer copyTransform({
     Offset? position,
     double? scale,
     double? rotation,
+    double? opacity,
+    bool? isVisible,
   });
 
   /// Serializes this overlay layer to a JSON-compatible map.
   Map<String, dynamic> toJson();
 }
 
-/// An editable text overlay layer rendered onto the photo.
+/// An editable text overlay layer rendered onto the photo with pro typography
+/// controls including letter spacing, line height, opacity, shadow, and pill
+/// styling.
 @immutable
 class TextOverlayLayer extends PhotoOverlayLayer {
   /// Creates a [TextOverlayLayer].
@@ -74,6 +86,8 @@ class TextOverlayLayer extends PhotoOverlayLayer {
     super.position = const Offset(0.5, 0.5),
     super.scale = 1.0,
     super.rotation = 0.0,
+    super.opacity = 1.0,
+    super.isVisible = true,
     this.color = const Color(0xFFFFFFFF),
     this.backgroundColor = const Color(0xCC111318),
     this.backgroundStyle = TextBackgroundStyle.translucent,
@@ -82,6 +96,9 @@ class TextOverlayLayer extends PhotoOverlayLayer {
     this.fontStyle = FontStyle.normal,
     this.fontFamily,
     this.textAlign = TextAlign.center,
+    this.letterSpacing = 0.0,
+    this.lineHeight = 1.2,
+    this.hasShadow = true,
   });
 
   /// Restores a [TextOverlayLayer] from a JSON map produced by [toJson].
@@ -119,6 +136,8 @@ class TextOverlayLayer extends PhotoOverlayLayer {
       position: parsedPosition,
       scale: ((json['scale'] as num?)?.toDouble() ?? 1.0).clamp(0.25, 5.0),
       rotation: (json['rotation'] as num?)?.toDouble() ?? 0.0,
+      opacity: ((json['opacity'] as num?)?.toDouble() ?? 1.0).clamp(0.1, 1.0),
+      isVisible: json['isVisible'] != false,
       color: Color((json['color'] as num?)?.toInt() ?? 0xFFFFFFFF),
       backgroundColor: Color(
         (json['backgroundColor'] as num?)?.toInt() ?? 0xCC111318,
@@ -132,6 +151,15 @@ class TextOverlayLayer extends PhotoOverlayLayer {
       fontStyle: json['italic'] == true ? FontStyle.italic : FontStyle.normal,
       fontFamily: json['fontFamily'] as String?,
       textAlign: parsedAlign,
+      letterSpacing: ((json['letterSpacing'] as num?)?.toDouble() ?? 0.0).clamp(
+        -2.0,
+        16.0,
+      ),
+      lineHeight: ((json['lineHeight'] as num?)?.toDouble() ?? 1.2).clamp(
+        0.85,
+        2.2,
+      ),
+      hasShadow: json['hasShadow'] != false,
     );
   }
 
@@ -162,13 +190,30 @@ class TextOverlayLayer extends PhotoOverlayLayer {
   /// Horizontal text alignment for multi-line text.
   final TextAlign textAlign;
 
+  /// Tracking / letter spacing in typographic units (`-2.0` to `16.0`).
+  final double letterSpacing;
+
+  /// Line height multiplier for multi-line copy (`0.85` to `2.2`).
+  final double lineHeight;
+
+  /// Whether a soft contrast drop shadow is drawn behind plain text.
+  final bool hasShadow;
+
   @override
   TextOverlayLayer copyTransform({
     Offset? position,
     double? scale,
     double? rotation,
+    double? opacity,
+    bool? isVisible,
   }) {
-    return copyWith(position: position, scale: scale, rotation: rotation);
+    return copyWith(
+      position: position,
+      scale: scale,
+      rotation: rotation,
+      opacity: opacity,
+      isVisible: isVisible,
+    );
   }
 
   /// Returns a copy with selectively updated properties.
@@ -178,6 +223,8 @@ class TextOverlayLayer extends PhotoOverlayLayer {
     Offset? position,
     double? scale,
     double? rotation,
+    double? opacity,
+    bool? isVisible,
     Color? color,
     Color? backgroundColor,
     TextBackgroundStyle? backgroundStyle,
@@ -186,6 +233,9 @@ class TextOverlayLayer extends PhotoOverlayLayer {
     FontStyle? fontStyle,
     String? fontFamily,
     TextAlign? textAlign,
+    double? letterSpacing,
+    double? lineHeight,
+    bool? hasShadow,
   }) {
     return TextOverlayLayer(
       id: id ?? this.id,
@@ -193,6 +243,8 @@ class TextOverlayLayer extends PhotoOverlayLayer {
       position: position ?? this.position,
       scale: (scale ?? this.scale).clamp(0.25, 5.0),
       rotation: rotation ?? this.rotation,
+      opacity: (opacity ?? this.opacity).clamp(0.1, 1.0),
+      isVisible: isVisible ?? this.isVisible,
       color: color ?? this.color,
       backgroundColor: backgroundColor ?? this.backgroundColor,
       backgroundStyle: backgroundStyle ?? this.backgroundStyle,
@@ -201,6 +253,9 @@ class TextOverlayLayer extends PhotoOverlayLayer {
       fontStyle: fontStyle ?? this.fontStyle,
       fontFamily: fontFamily ?? this.fontFamily,
       textAlign: textAlign ?? this.textAlign,
+      letterSpacing: (letterSpacing ?? this.letterSpacing).clamp(-2.0, 16.0),
+      lineHeight: (lineHeight ?? this.lineHeight).clamp(0.85, 2.2),
+      hasShadow: hasShadow ?? this.hasShadow,
     );
   }
 
@@ -213,6 +268,8 @@ class TextOverlayLayer extends PhotoOverlayLayer {
       'position': <String, double>{'x': position.dx, 'y': position.dy},
       'scale': scale,
       'rotation': rotation,
+      'opacity': opacity,
+      'isVisible': isVisible,
       'color': color.toARGB32(),
       'backgroundColor': backgroundColor.toARGB32(),
       'backgroundStyle': backgroundStyle.name,
@@ -221,6 +278,9 @@ class TextOverlayLayer extends PhotoOverlayLayer {
       'italic': fontStyle == FontStyle.italic,
       'fontFamily': fontFamily,
       'textAlign': textAlign.name,
+      'letterSpacing': letterSpacing,
+      'lineHeight': lineHeight,
+      'hasShadow': hasShadow,
     };
   }
 
@@ -235,6 +295,8 @@ class TextOverlayLayer extends PhotoOverlayLayer {
         other.position == position &&
         other.scale == scale &&
         other.rotation == rotation &&
+        other.opacity == opacity &&
+        other.isVisible == isVisible &&
         other.color == color &&
         other.backgroundColor == backgroundColor &&
         other.backgroundStyle == backgroundStyle &&
@@ -242,7 +304,10 @@ class TextOverlayLayer extends PhotoOverlayLayer {
         other.fontWeight == fontWeight &&
         other.fontStyle == fontStyle &&
         other.fontFamily == fontFamily &&
-        other.textAlign == textAlign;
+        other.textAlign == textAlign &&
+        other.letterSpacing == letterSpacing &&
+        other.lineHeight == lineHeight &&
+        other.hasShadow == hasShadow;
   }
 
   @override
@@ -252,6 +317,8 @@ class TextOverlayLayer extends PhotoOverlayLayer {
     position,
     scale,
     rotation,
+    opacity,
+    isVisible,
     color,
     backgroundColor,
     backgroundStyle,
@@ -260,10 +327,13 @@ class TextOverlayLayer extends PhotoOverlayLayer {
     fontStyle,
     fontFamily,
     textAlign,
+    letterSpacing,
+    lineHeight,
+    hasShadow,
   );
 }
 
-/// A sticker or emoji badge overlay layer rendered onto the photo.
+/// A sticker, emoji, or vector studio badge overlay rendered onto the photo.
 @immutable
 class StickerOverlayLayer extends PhotoOverlayLayer {
   /// Creates a [StickerOverlayLayer].
@@ -273,7 +343,12 @@ class StickerOverlayLayer extends PhotoOverlayLayer {
     super.position = const Offset(0.5, 0.5),
     super.scale = 1.0,
     super.rotation = 0.0,
+    super.opacity = 1.0,
+    super.isVisible = true,
     this.baseSize = 0.14,
+    this.isBadge = false,
+    this.badgeColor = const Color(0xFF4F8BFF),
+    this.fontFamily,
   });
 
   /// Restores a [StickerOverlayLayer] from a JSON map produced by [toJson].
@@ -293,26 +368,49 @@ class StickerOverlayLayer extends PhotoOverlayLayer {
       position: parsedPosition,
       scale: ((json['scale'] as num?)?.toDouble() ?? 1.0).clamp(0.25, 5.0),
       rotation: (json['rotation'] as num?)?.toDouble() ?? 0.0,
+      opacity: ((json['opacity'] as num?)?.toDouble() ?? 1.0).clamp(0.1, 1.0),
+      isVisible: json['isVisible'] != false,
       baseSize: ((json['baseSize'] as num?)?.toDouble() ?? 0.14).clamp(
         0.04,
         0.4,
       ),
+      isBadge: json['isBadge'] == true,
+      badgeColor: Color((json['badgeColor'] as num?)?.toInt() ?? 0xFF4F8BFF),
+      fontFamily: json['fontFamily'] as String?,
     );
   }
 
-  /// Sticker glyph or emoji string.
+  /// Sticker glyph, emoji string, or badge text.
   final String content;
 
   /// Base normalized sticker size relative to `min(imageWidth, imageHeight)`.
   final double baseSize;
+
+  /// When `true`, renders [content] as a crisp studio pill badge (e.g. `RAW`,
+  /// `PRO`, `4K`) using [badgeColor].
+  final bool isBadge;
+
+  /// Accent fill color used when [isBadge] is `true`.
+  final Color badgeColor;
+
+  /// Optional custom font family used when [isBadge] is `true`.
+  final String? fontFamily;
 
   @override
   StickerOverlayLayer copyTransform({
     Offset? position,
     double? scale,
     double? rotation,
+    double? opacity,
+    bool? isVisible,
   }) {
-    return copyWith(position: position, scale: scale, rotation: rotation);
+    return copyWith(
+      position: position,
+      scale: scale,
+      rotation: rotation,
+      opacity: opacity,
+      isVisible: isVisible,
+    );
   }
 
   /// Returns a copy with selectively updated fields.
@@ -322,7 +420,12 @@ class StickerOverlayLayer extends PhotoOverlayLayer {
     Offset? position,
     double? scale,
     double? rotation,
+    double? opacity,
+    bool? isVisible,
     double? baseSize,
+    bool? isBadge,
+    Color? badgeColor,
+    String? fontFamily,
   }) {
     return StickerOverlayLayer(
       id: id ?? this.id,
@@ -330,7 +433,12 @@ class StickerOverlayLayer extends PhotoOverlayLayer {
       position: position ?? this.position,
       scale: (scale ?? this.scale).clamp(0.25, 5.0),
       rotation: rotation ?? this.rotation,
+      opacity: (opacity ?? this.opacity).clamp(0.1, 1.0),
+      isVisible: isVisible ?? this.isVisible,
       baseSize: (baseSize ?? this.baseSize).clamp(0.04, 0.4),
+      isBadge: isBadge ?? this.isBadge,
+      badgeColor: badgeColor ?? this.badgeColor,
+      fontFamily: fontFamily ?? this.fontFamily,
     );
   }
 
@@ -343,7 +451,12 @@ class StickerOverlayLayer extends PhotoOverlayLayer {
       'position': <String, double>{'x': position.dx, 'y': position.dy},
       'scale': scale,
       'rotation': rotation,
+      'opacity': opacity,
+      'isVisible': isVisible,
       'baseSize': baseSize,
+      'isBadge': isBadge,
+      'badgeColor': badgeColor.toARGB32(),
+      'fontFamily': fontFamily,
     };
   }
 
@@ -358,10 +471,26 @@ class StickerOverlayLayer extends PhotoOverlayLayer {
         other.position == position &&
         other.scale == scale &&
         other.rotation == rotation &&
-        other.baseSize == baseSize;
+        other.opacity == opacity &&
+        other.isVisible == isVisible &&
+        other.baseSize == baseSize &&
+        other.isBadge == isBadge &&
+        other.badgeColor == badgeColor &&
+        other.fontFamily == fontFamily;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, content, position, scale, rotation, baseSize);
+  int get hashCode => Object.hash(
+    id,
+    content,
+    position,
+    scale,
+    rotation,
+    opacity,
+    isVisible,
+    baseSize,
+    isBadge,
+    badgeColor,
+    fontFamily,
+  );
 }

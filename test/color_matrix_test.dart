@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:photo_editor/photo_editor.dart';
 
@@ -39,7 +41,13 @@ void main() {
             expect(v.isFinite, isTrue);
           }
         }
-        expect(PhotoFilters.presets.length, greaterThanOrEqualTo(16));
+        expect(PhotoFilters.presets.length, greaterThanOrEqualTo(24));
+        final monoOnly = PhotoFilters.forCategory(
+          PhotoFilters.presets,
+          PhotoFilterCategory.monochrome,
+        );
+        expect(monoOnly.first.isOriginal, isTrue);
+        expect(monoOnly.length, greaterThanOrEqualTo(5));
       },
     );
 
@@ -159,6 +167,44 @@ void main() {
       expect(PhotoColorMatrix.isIdentity(composed), isFalse);
       final neutral = PhotoColorMatrix.compose();
       expect(PhotoColorMatrix.isIdentity(neutral), isTrue);
+    });
+
+    test('vibrance boosts cool channels while staying finite', () {
+      final vib = PhotoColorMatrix.vibrance(0.75);
+      expect(vib.length, 20);
+      expect(PhotoColorMatrix.isIdentity(vib), isFalse);
+      final out = _applyMatrix(vib, 100, 120, 180, 255);
+      expect(out[2], greaterThan(180));
+    });
+  });
+
+  group('PhotoHistogramCalculator', () {
+    test('computes normalized 64-bin RGB and luminance distributions', () {
+      final rgba = Uint8List(4 * 4 * 4);
+      for (var i = 0; i < rgba.length; i += 4) {
+        rgba[i] = 200; // R
+        rgba[i + 1] = 100; // G
+        rgba[i + 2] = 50; // B
+        rgba[i + 3] = 255; // A
+      }
+      final hist = PhotoHistogramCalculator.computeFromRgba(rgba);
+      expect(hist.binCount, 64);
+      expect(hist.red.reduce((a, b) => a > b ? a : b), closeTo(1.0, 1e-6));
+      expect(hist.green.reduce((a, b) => a > b ? a : b), closeTo(1.0, 1e-6));
+      expect(hist.blue.reduce((a, b) => a > b ? a : b), closeTo(1.0, 1e-6));
+
+      // Brightness adjustment shifts histogram peak to the right.
+      final brightHist = PhotoHistogramCalculator.computeFromRgba(
+        rgba,
+        adjustments: const PhotoAdjustments(brightness: 0.4),
+      );
+      final origPeakIdx = hist.luminance.indexOf(
+        hist.luminance.reduce((a, b) => a > b ? a : b),
+      );
+      final brightPeakIdx = brightHist.luminance.indexOf(
+        brightHist.luminance.reduce((a, b) => a > b ? a : b),
+      );
+      expect(brightPeakIdx, greaterThan(origPeakIdx));
     });
   });
 }

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../controller/photo_editor_controller.dart';
+import '../../engine/histogram_calculator.dart';
 import '../../models/photo_adjustments.dart';
 import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
+import 'histogram_widget.dart';
 import 'studio_widgets.dart';
 
-/// Tonal, white-balance, clarity, vignette, and blur adjustment controls.
+/// Tonal, color, optical, and texture adjustment controls paired with a live
+/// RGB & luminance histogram on desktop viewports.
 class AdjustPanel extends StatelessWidget {
   /// Creates an [AdjustPanel].
   const AdjustPanel({
@@ -16,6 +19,7 @@ class AdjustPanel extends StatelessWidget {
     required this.theme,
     required this.labels,
     required this.isDesktop,
+    this.histogramData,
   });
 
   /// Active editor controller.
@@ -33,26 +37,37 @@ class AdjustPanel extends StatelessWidget {
   /// Whether rendering in the vertical desktop inspector sidebar.
   final bool isDesktop;
 
+  /// Optional live RGB histogram data rendered above desktop sliders.
+  final PhotoHistogramData? histogramData;
+
   static IconData _iconFor(PhotoAdjustmentType type) {
     switch (type) {
+      case PhotoAdjustmentType.exposure:
+        return Icons.exposure_rounded;
       case PhotoAdjustmentType.brightness:
         return Icons.wb_sunny_outlined;
       case PhotoAdjustmentType.contrast:
         return Icons.contrast_rounded;
+      case PhotoAdjustmentType.highlights:
+        return Icons.brightness_high_rounded;
+      case PhotoAdjustmentType.shadows:
+        return Icons.brightness_2_outlined;
       case PhotoAdjustmentType.saturation:
         return Icons.palette_outlined;
-      case PhotoAdjustmentType.exposure:
-        return Icons.exposure_rounded;
+      case PhotoAdjustmentType.vibrance:
+        return Icons.color_lens_outlined;
       case PhotoAdjustmentType.warmth:
         return Icons.thermostat_rounded;
       case PhotoAdjustmentType.tint:
         return Icons.invert_colors_rounded;
-      case PhotoAdjustmentType.fade:
-        return Icons.gradient_rounded;
       case PhotoAdjustmentType.clarity:
         return Icons.auto_awesome_outlined;
+      case PhotoAdjustmentType.fade:
+        return Icons.gradient_rounded;
       case PhotoAdjustmentType.vignette:
         return Icons.vignette_rounded;
+      case PhotoAdjustmentType.grain:
+        return Icons.grain_rounded;
       case PhotoAdjustmentType.blur:
         return Icons.blur_on_rounded;
     }
@@ -83,11 +98,20 @@ class AdjustPanel extends StatelessWidget {
               onAction: controller.resetAdjustments,
             ),
           ),
+          if (histogramData != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: PhotoHistogramView(
+                data: histogramData!,
+                theme: theme,
+                label: labels.histogram.toUpperCase(),
+              ),
+            ),
           Expanded(
             child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
               itemCount: adjustments.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 9),
               itemBuilder: (context, index) {
                 final type = adjustments[index];
                 final value = current.valueFor(type);
@@ -154,7 +178,7 @@ class AdjustPanel extends StatelessWidget {
                 onDoubleTap: () => controller.resetAdjustment(type),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 140),
-                  width: 68,
+                  width: 72,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 6,
                     vertical: 6,

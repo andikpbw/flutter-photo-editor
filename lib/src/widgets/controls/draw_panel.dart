@@ -6,7 +6,7 @@ import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
 import 'studio_widgets.dart';
 
-/// Drawing instrument, color palette, stroke width, and opacity controls.
+/// Drawing, vector shape markup, and non-destructive privacy-blur controls.
 class DrawPanel extends StatelessWidget {
   /// Creates a [DrawPanel].
   const DrawPanel({
@@ -39,55 +39,25 @@ class DrawPanel extends StatelessWidget {
         return Icons.edit_rounded;
       case BrushTool.highlighter:
         return Icons.brush_rounded;
+      case BrushTool.line:
+        return Icons.horizontal_rule_rounded;
       case BrushTool.arrow:
         return Icons.north_east_rounded;
       case BrushTool.rectangle:
         return Icons.crop_square_rounded;
+      case BrushTool.filledRectangle:
+        return Icons.square_rounded;
       case BrushTool.oval:
         return Icons.circle_outlined;
+      case BrushTool.blurRect:
+        return Icons.blur_circular_rounded;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final hasStrokes = controller.state.strokes.isNotEmpty;
-
-    final toolChips = Row(
-      children: BrushTool.values.map((tool) {
-        final selected = controller.brushTool == tool;
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: Tooltip(
-              message: labels.brushToolLabel(tool),
-              child: GestureDetector(
-                onTap: () => controller.setBrushTool(tool),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 140),
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? theme.accentColor.withValues(alpha: 0.16)
-                        : theme.elevatedSurfaceColor,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: selected ? theme.accentColor : theme.borderColor,
-                    ),
-                  ),
-                  child: Icon(
-                    _iconFor(tool),
-                    size: 18,
-                    color: selected
-                        ? theme.accentColor
-                        : theme.primaryTextColor,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
+    final isBlurTool = controller.brushTool == BrushTool.blurRect;
 
     final sizeSlider = StudioSliderRow(
       label: labels.brushSize,
@@ -128,19 +98,77 @@ class DrawPanel extends StatelessWidget {
             onAction: controller.clearStrokes,
           ),
           const SizedBox(height: 12),
-          toolChips,
-          const SizedBox(height: 16),
-          StudioColorSwatches(
-            colors: colors,
-            selectedColor: controller.brushColor,
-            theme: theme,
-            wrap: true,
-            onSelected: controller.setBrushColor,
+          GridView.count(
+            crossAxisCount: 4,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1.05,
+            children: BrushTool.values.map((tool) {
+              final selected = controller.brushTool == tool;
+              return Tooltip(
+                message: labels.brushToolLabel(tool),
+                child: InkWell(
+                  onTap: () => controller.setBrushTool(tool),
+                  borderRadius: BorderRadius.circular(10),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 140),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? theme.accentColor.withValues(alpha: 0.16)
+                          : theme.elevatedSurfaceColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: selected ? theme.accentColor : theme.borderColor,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(
+                          _iconFor(tool),
+                          size: 18,
+                          color: selected
+                              ? theme.accentColor
+                              : theme.primaryTextColor,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          labels.brushToolLabel(tool),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: selected
+                                ? theme.accentColor
+                                : theme.secondaryTextColor,
+                            fontSize: 9.5,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
-          const SizedBox(height: 18),
-          sizeSlider,
-          const SizedBox(height: 12),
-          opacitySlider,
+          if (!isBlurTool) ...<Widget>[
+            const SizedBox(height: 16),
+            StudioColorSwatches(
+              colors: colors,
+              selectedColor: controller.brushColor,
+              theme: theme,
+              wrap: true,
+              onSelected: controller.setBrushColor,
+            ),
+            const SizedBox(height: 18),
+            sizeSlider,
+            const SizedBox(height: 12),
+            opacitySlider,
+          ],
           if (hasStrokes) ...<Widget>[
             const SizedBox(height: 16),
             OutlinedButton.icon(
@@ -167,13 +195,54 @@ class DrawPanel extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          sizeSlider,
+          if (!isBlurTool) sizeSlider,
           const SizedBox(height: 4),
           Row(
             children: <Widget>[
-              Expanded(child: toolChips),
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: BrushTool.values.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 6),
+                    itemBuilder: (context, index) {
+                      final tool = BrushTool.values[index];
+                      final selected = controller.brushTool == tool;
+                      return Tooltip(
+                        message: labels.brushToolLabel(tool),
+                        child: GestureDetector(
+                          onTap: () => controller.setBrushTool(tool),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 140),
+                            padding: const EdgeInsets.symmetric(horizontal: 11),
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? theme.accentColor.withValues(alpha: 0.16)
+                                  : theme.elevatedSurfaceColor,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: selected
+                                    ? theme.accentColor
+                                    : theme.borderColor,
+                              ),
+                            ),
+                            child: Icon(
+                              _iconFor(tool),
+                              size: 18,
+                              color: selected
+                                  ? theme.accentColor
+                                  : theme.primaryTextColor,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
               if (hasStrokes) ...<Widget>[
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
                 IconButton(
                   onPressed: controller.undoLastStroke,
                   icon: const Icon(Icons.undo_rounded, size: 18),
@@ -191,13 +260,15 @@ class DrawPanel extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: 8),
-          StudioColorSwatches(
-            colors: colors,
-            selectedColor: controller.brushColor,
-            theme: theme,
-            onSelected: controller.setBrushColor,
-          ),
+          if (!isBlurTool) ...<Widget>[
+            const SizedBox(height: 8),
+            StudioColorSwatches(
+              colors: colors,
+              selectedColor: controller.brushColor,
+              theme: theme,
+              onSelected: controller.setBrushColor,
+            ),
+          ],
         ],
       ),
     );

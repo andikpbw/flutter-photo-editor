@@ -153,5 +153,50 @@ void main() {
       expect(controller.state, PhotoEditState.initial);
       expect(controller.hasChanges, isFalse);
     });
+
+    test(
+      'supports split compare curtain, frames, layer z-order, visibility & nudge',
+      () {
+        final controller = PhotoEditorController();
+        addTearDown(controller.dispose);
+
+        // Split compare mode & position clamping
+        expect(controller.compareMode, PhotoCompareMode.off);
+        controller.toggleCompareMode();
+        expect(controller.compareMode, PhotoCompareMode.splitCurtain);
+        controller.setSplitPosition(0.25);
+        expect(controller.splitPosition, 0.25);
+        controller.toggleCompareMode();
+        expect(controller.compareMode, PhotoCompareMode.off);
+
+        // Studio frames
+        controller.setFrameStyle(PhotoFrameStyle.polaroid);
+        controller.setFrameCornerRadius(0.3);
+        expect(controller.state.frame.style, PhotoFrameStyle.polaroid);
+        expect(controller.state.frame.cornerRadius, 0.3);
+        expect(controller.hasChanges, isTrue);
+
+        // Layer z-order, visibility, studio badge, and arrow nudge
+        final first = controller.addTextLayer(
+          text: 'First',
+          position: const Offset(0.5, 0.5),
+        );
+        final second = controller.addBadgeLayer('RAW');
+        expect(controller.state.overlays.last.id, second.id);
+
+        controller.moveOverlayBackward(second.id);
+        expect(controller.state.overlays.first.id, second.id);
+        controller.moveOverlayForward(second.id);
+        expect(controller.state.overlays.last.id, second.id);
+
+        controller.toggleOverlayVisibility(first.id);
+        expect(controller.state.overlays.first.isVisible, isFalse);
+
+        controller.selectOverlay(first.id);
+        controller.nudgeSelectedOverlay(const Offset(0.05, -0.02));
+        expect(controller.selectedOverlay!.position.dx, closeTo(0.55, 1e-6));
+        expect(controller.selectedOverlay!.position.dy, closeTo(0.48, 1e-6));
+      },
+    );
   });
 }

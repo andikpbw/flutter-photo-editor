@@ -165,15 +165,25 @@ void main() {
         addTearDown(source.dispose);
 
         const state = PhotoEditState(
-          filter: PhotoFilters.goldenHour,
-          filterIntensity: 0.8,
+          filter: PhotoFilters.tealOrange,
+          filterIntensity: 0.85,
           adjustments: PhotoAdjustments(
             brightness: 0.1,
             contrast: 0.15,
+            highlights: -0.25,
+            shadows: 0.3,
+            vibrance: 0.25,
             vignette: 0.4,
-            blur: 0.15,
+            grain: 0.35,
+            blur: 0.1,
           ),
           transform: PhotoTransform(rotationAngle: 0.12),
+          frame: PhotoFrame(
+            style: PhotoFrameStyle.polaroid,
+            color: Color(0xFFF5F0E6),
+            thickness: 0.5,
+            cornerRadius: 0.15,
+          ),
           strokes: <DrawingStroke>[
             DrawingStroke(
               id: 's1',
@@ -206,14 +216,43 @@ void main() {
               strokeWidth: 0.015,
               tool: BrushTool.oval,
             ),
+            DrawingStroke(
+              id: 's5',
+              points: <Offset>[Offset(0.1, 0.6), Offset(0.35, 0.85)],
+              color: Colors.black,
+              strokeWidth: 0.015,
+              tool: BrushTool.blurRect,
+            ),
+            DrawingStroke(
+              id: 's6',
+              points: <Offset>[Offset(0.1, 0.1), Offset(0.3, 0.15)],
+              color: Colors.black,
+              strokeWidth: 0.015,
+              tool: BrushTool.filledRectangle,
+            ),
+            DrawingStroke(
+              id: 's7',
+              points: <Offset>[Offset(0.1, 0.9), Offset(0.9, 0.9)],
+              color: Colors.white,
+              strokeWidth: 0.01,
+              tool: BrushTool.line,
+            ),
           ],
           overlays: <PhotoOverlayLayer>[
             TextOverlayLayer(
               id: 't1',
               text: 'Studio Shot',
               backgroundStyle: TextBackgroundStyle.outline,
+              opacity: 0.9,
+              letterSpacing: 1.5,
             ),
-            StickerOverlayLayer(id: 'st1', content: '✨'),
+            StickerOverlayLayer(
+              id: 'st1',
+              content: 'PRO',
+              isBadge: true,
+              badgeColor: Color(0xFFFF5C6C),
+            ),
+            StickerOverlayLayer(id: 'st2', content: '✨', isVisible: false),
           ],
         );
 

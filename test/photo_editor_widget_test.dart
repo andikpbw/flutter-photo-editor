@@ -61,9 +61,9 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Filters tab is active initially: tap Vivid filter.
-        expect(find.text('Vivid'), findsOneWidget);
-        await tester.tap(find.text('Vivid'));
+        // Filters tab is active initially: tap Vivid filter card.
+        expect(find.text('Vivid'), findsWidgets);
+        await tester.tap(find.text('Vivid').last);
         await tester.pumpAndSettle();
         expect(controller.state.filter, PhotoFilters.vivid);
 
@@ -74,12 +74,21 @@ void main() {
           'Draw',
           'Text',
           'Stickers',
+          'Frames',
         ]) {
+          await tester.ensureVisible(find.text(tab));
           await tester.tap(find.text(tab));
           await tester.pumpAndSettle();
         }
 
-        // Add a sticker.
+        // Apply a studio frame.
+        await tester.tap(find.text('Polaroid'));
+        await tester.pumpAndSettle();
+        expect(controller.state.frame.style, PhotoFrameStyle.polaroid);
+
+        // Add a studio badge & sticker.
+        await tester.tap(find.text('Stickers'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('✨'));
         await tester.pumpAndSettle();
         expect(controller.state.overlays.length, 1);
@@ -94,10 +103,11 @@ void main() {
         await tester.pumpAndSettle();
         expect(controller.state.overlays.length, 2);
 
-        // Toggle Compare Original badge.
+        // Toggle interactive Split-Screen Before/After Compare curtain.
         await tester.tap(find.byIcon(Icons.compare_rounded));
         await tester.pumpAndSettle();
-        expect(find.text('ORIGINAL'), findsOneWidget);
+        expect(find.text('BEFORE'), findsOneWidget);
+        expect(find.text('AFTER'), findsOneWidget);
         await tester.tap(find.byIcon(Icons.compare_rounded));
         await tester.pumpAndSettle();
 
@@ -140,23 +150,30 @@ void main() {
             ),
           ),
         );
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 100)),
+        );
         await tester.pumpAndSettle();
 
         // Desktop header shows dimensions badge & zoom percentage.
         expect(find.text('320 × 240'), findsOneWidget);
         expect(find.text('100%'), findsOneWidget);
 
-        // Navigate every desktop inspector panel.
+        // Navigate every desktop inspector panel (including Frames & live RGB Histogram).
         for (final tab in <String>[
           'Crop',
           'Adjust',
           'Draw',
           'Text',
           'Stickers',
+          'Frames',
           'Filters',
         ]) {
           await tester.tap(find.text(tab));
           await tester.pumpAndSettle();
+          if (tab == 'Adjust') {
+            expect(find.byType(PhotoHistogramView), findsOneWidget);
+          }
         }
 
         // Rotate right updates dimensions badge to 240 x 320.
@@ -221,8 +238,10 @@ void main() {
           'Draw',
           'Text',
           'Stickers',
+          'Frames',
           'Filters',
         ]) {
+          await tester.ensureVisible(find.text(tab));
           await tester.tap(find.text(tab));
           await tester.pumpAndSettle();
         }
@@ -266,7 +285,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Photo Editor'), findsOneWidget);
 
-        await tester.tap(find.text('Vivid'));
+        await tester.tap(find.text('Vivid').last);
         await tester.pumpAndSettle();
 
         await tester.runAsync(() async {

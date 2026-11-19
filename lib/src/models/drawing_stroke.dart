@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 
-/// Drawing instrument type used for markup strokes.
+/// Drawing and redaction instrument type used for markup strokes.
 enum BrushTool {
   /// Smooth freehand round pen stroke.
   pen,
@@ -10,14 +10,23 @@ enum BrushTool {
   /// Semi-transparent marker highlighter stroke.
   highlighter,
 
+  /// Crisp straight vector line from start point to end point.
+  line,
+
   /// Vector straight arrow from start point to end point.
   arrow,
 
   /// Vector stroked rectangle from start corner to end corner.
   rectangle,
 
+  /// Solid filled rectangle for emphasis or redaction.
+  filledRectangle,
+
   /// Vector stroked ellipse inscribed between start and end points.
   oval,
+
+  /// Non-destructive privacy blur region masking sensitive image areas.
+  blurRect,
 }
 
 /// An immutable markup stroke stored in normalized `[0.0, 1.0]` image
@@ -28,7 +37,7 @@ class DrawingStroke {
   ///
   /// [points] are normalized offsets in `[0.0, 1.0]` oriented-image space.
   /// [strokeWidth] is expressed as a fraction of the image's shortest side
-  /// (typically `0.004` to `0.04`).
+  /// (typically `0.004` to `0.05`).
   const DrawingStroke({
     required this.id,
     required this.points,
@@ -90,6 +99,15 @@ class DrawingStroke {
 
   /// Stroke opacity multiplier in `[0.05, 1.0]`.
   final double opacity;
+
+  /// Returns `true` if this stroke is defined strictly by start & end points.
+  bool get isTwoPointShape =>
+      tool == BrushTool.line ||
+      tool == BrushTool.arrow ||
+      tool == BrushTool.rectangle ||
+      tool == BrushTool.filledRectangle ||
+      tool == BrushTool.oval ||
+      tool == BrushTool.blurRect;
 
   /// Returns a copy with all [points] transformed by [mapper].
   DrawingStroke mapPoints(Offset Function(Offset point) mapper) {

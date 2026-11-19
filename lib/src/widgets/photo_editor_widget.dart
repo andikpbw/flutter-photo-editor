@@ -7,26 +7,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../controller/photo_editor_controller.dart';
+import '../engine/histogram_calculator.dart';
 import '../engine/photo_export_engine.dart';
 import '../models/overlay_layer.dart';
+import '../models/photo_adjustments.dart';
 import '../models/photo_edit_state.dart';
 import '../models/photo_editor_config.dart';
 import '../models/photo_editor_labels.dart';
 import '../models/photo_editor_result.dart';
 import '../models/photo_editor_theme.dart';
+import '../models/photo_filter.dart';
 import 'canvas/photo_editor_canvas.dart';
 import 'controls/adjust_panel.dart';
 import 'controls/crop_panel.dart';
 import 'controls/draw_panel.dart';
 import 'controls/filter_panel.dart';
+import 'controls/frame_panel.dart';
 import 'controls/sticker_panel.dart';
 import 'controls/text_panel.dart';
 import 'dialogs/text_editor_dialog.dart';
 
-/// A modern, adaptive, studio-grade Flutter photo editor widget supporting
-/// color-grading filters, precision adjustments, interactive cropping,
-/// straightening, rotation, flipping, vector markup drawing, text overlays,
-/// and stickers across mobile, desktop, and web platforms.
+/// A modern, adaptive, pro-studio Flutter photo editor widget supporting 24
+/// categorized color-grading filters, 14 precision adjustments with live RGB
+/// histogram, split-screen before/after comparison, interactive cropping &
+/// straightening, vector markup & privacy blur, rich text layers with smart
+/// center snap guides, stickers & studio badges, and museum/Polaroid frames
+/// across mobile, desktop, and web platforms.
 class PhotoEditor extends StatefulWidget {
   /// Creates a [PhotoEditor] from encoded image [bytes] (PNG, JPEG, WebP, etc.).
   PhotoEditor.memory(
@@ -182,6 +188,12 @@ class _PhotoEditorState extends State<PhotoEditor> {
   ui.Image? _image;
   bool _ownsImage = false;
   ui.Image? _thumbnail;
+  Uint8List? _thumbnailRgba;
+  PhotoHistogramData? _cachedHistogram;
+  PhotoFilter? _histFilter;
+  double? _histIntensity;
+  PhotoAdjustments? _histAdjustments;
+
   Object? _loadError;
   bool _isLoading = true;
   bool _isExporting = false;
@@ -266,6 +278,8 @@ class _PhotoEditorState extends State<PhotoEditor> {
     _disposeOwnedImage();
     _thumbnail?.dispose();
     _thumbnail = null;
+    _thumbnailRgba = null;
+    _cachedHistogram = null;
 
     if (mounted) {
       setState(() {
@@ -308,7 +322,6 @@ class _PhotoEditorState extends State<PhotoEditor> {
             if (generation != _loadGeneration || !mounted) {
               return;
             }
-            // Clone image handle so PhotoEditor safely owns its lifetime.
             final cloned = info.image.clone();
             unawaited(
               _onImageReady(cloned, ownsImage: true, generation: generation),
@@ -347,7 +360,25 @@ class _PhotoEditorState extends State<PhotoEditor> {
     _disposeOwnedImage();
     _image = image;
     _ownsImage = ownsImage;
+    _cachedHistogram = null;
 
+    if (generation != _loadGeneration || !mounted) {
+      return;
+    }
+
+    // Show the decoded image immediately without blocking on thumbnail/histogram prep.
+    setState(() {
+      _isLoading = false;
+      _loadError = null;
+    });
+
+    unawaited(_prepareThumbnailAndHistogram(image, generation));
+  }
+
+  Future<void> _prepareThumbnailAndHistogram(
+    ui.Image image,
+    int generation,
+  ) async {
     final thumb = await _buildThumbnail(image);
     if (generation != _loadGeneration || !mounted) {
       thumb?.dispose();
@@ -356,11 +387,24 @@ class _PhotoEditorState extends State<PhotoEditor> {
 
     _thumbnail?.dispose();
     _thumbnail = thumb;
+    setState(() {});
 
-    setState(() {
-      _isLoading = false;
-      _loadError = null;
-    });
+    if (thumb != null && widget.config.showHistogram) {
+      try {
+        final data = await thumb.toByteData();
+        if (generation != _loadGeneration || !mounted || data == null) {
+          return;
+        }
+        _thumbnailRgba = data.buffer.asUint8List(
+          data.offsetInBytes,
+          data.lengthInBytes,
+        );
+        _cachedHistogram = null;
+        setState(() {});
+      } catch (_) {
+        // Ignore transient GPU readback errors; editor remains fully usable.
+      }
+    }
   }
 
   Future<ui.Image?> _buildThumbnail(ui.Image source) async {
@@ -389,6 +433,30 @@ class _PhotoEditorState extends State<PhotoEditor> {
     } catch (_) {
       return null;
     }
+  }
+
+  PhotoHistogramData? _resolveHistogram() {
+    final rgba = _thumbnailRgba;
+    if (!widget.config.showHistogram || rgba == null) {
+      return null;
+    }
+    final state = _controller.state;
+    if (_cachedHistogram != null &&
+        _histFilter == state.filter &&
+        _histIntensity == state.filterIntensity &&
+        _histAdjustments == state.adjustments) {
+      return _cachedHistogram;
+    }
+    _histFilter = state.filter;
+    _histIntensity = state.filterIntensity;
+    _histAdjustments = state.adjustments;
+    _cachedHistogram = PhotoHistogramCalculator.computeFromRgba(
+      rgba,
+      filter: state.filter,
+      filterIntensity: state.filterIntensity,
+      adjustments: state.adjustments,
+    );
+    return _cachedHistogram;
   }
 
   Future<void> _handleExport() async {
@@ -481,6 +549,8 @@ class _PhotoEditorState extends State<PhotoEditor> {
         return _labels.textTab;
       case PhotoEditorTool.stickers:
         return _labels.stickersTab;
+      case PhotoEditorTool.frames:
+        return _labels.framesTab;
     }
   }
 
@@ -498,6 +568,8 @@ class _PhotoEditorState extends State<PhotoEditor> {
         return Icons.title_rounded;
       case PhotoEditorTool.stickers:
         return Icons.emoji_emotions_outlined;
+      case PhotoEditorTool.frames:
+        return Icons.filter_frames_rounded;
     }
   }
 
@@ -523,6 +595,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
           theme: _theme,
           labels: _labels,
           isDesktop: isDesktop,
+          histogramData: isDesktop ? _resolveHistogram() : null,
         );
       case PhotoEditorTool.crop:
         return CropPanel(
@@ -555,6 +628,15 @@ class _PhotoEditorState extends State<PhotoEditor> {
         return StickerPanel(
           controller: _controller,
           stickers: widget.config.stickers,
+          studioBadges: widget.config.studioBadges,
+          theme: _theme,
+          labels: _labels,
+          isDesktop: isDesktop,
+        );
+      case PhotoEditorTool.frames:
+        return FramePanel(
+          controller: _controller,
+          frameColors: widget.config.frameColors,
           theme: _theme,
           labels: _labels,
           isDesktop: isDesktop,
@@ -572,7 +654,9 @@ class _PhotoEditorState extends State<PhotoEditor> {
           return LayoutBuilder(
             builder: (context, constraints) {
               final isDesktop = _isDesktopForWidth(constraints.maxWidth);
-              return isDesktop ? _buildDesktopLayout() : _buildMobileLayout();
+              return isDesktop
+                  ? _buildDesktopLayout()
+                  : _buildMobileLayout(constraints.maxWidth);
             },
           );
         },
@@ -611,6 +695,16 @@ class _PhotoEditorState extends State<PhotoEditor> {
           control: !isApple,
         ): () =>
             _setZoom(1.0),
+        const SingleActivator(LogicalKeyboardKey.backslash): () => _controller
+            .toggleCompareMode(preferSplit: widget.config.enableSplitCompare),
+        const SingleActivator(LogicalKeyboardKey.arrowUp): () =>
+            _controller.nudgeSelectedOverlay(const Offset(0, -0.008)),
+        const SingleActivator(LogicalKeyboardKey.arrowDown): () =>
+            _controller.nudgeSelectedOverlay(const Offset(0, 0.008)),
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+            _controller.nudgeSelectedOverlay(const Offset(-0.008, 0)),
+        const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+            _controller.nudgeSelectedOverlay(const Offset(0.008, 0)),
         const SingleActivator(LogicalKeyboardKey.delete):
             _controller.deleteSelectedOverlay,
         const SingleActivator(LogicalKeyboardKey.backspace):
@@ -678,7 +772,10 @@ class _PhotoEditorState extends State<PhotoEditor> {
           controller: _controller,
           theme: _theme,
           enableZoomPan: widget.config.enableZoomPan,
+          enableSnapGuides: widget.config.enableSnapGuides,
           originalBadgeLabel: _labels.originalBadge,
+          beforeBadgeLabel: _labels.beforeBadge,
+          afterBadgeLabel: _labels.afterBadge,
           transformationController: _transformationController,
           onEditTextLayer: _handleEditText,
         ),
@@ -859,7 +956,7 @@ class _PhotoEditorState extends State<PhotoEditor> {
                 ),
                 const SizedBox(width: 12),
               ],
-              // Undo / Redo / Compare / Reset
+              // Undo / Redo / Split Compare / Reset
               _ToolbarIconButton(
                 icon: Icons.undo_rounded,
                 tooltip: _labels.undo,
@@ -880,8 +977,8 @@ class _PhotoEditorState extends State<PhotoEditor> {
                 active: _controller.isComparingOriginal,
                 theme: _theme,
                 onPressed: _image != null
-                    ? () => _controller.setComparingOriginal(
-                        !_controller.isComparingOriginal,
+                    ? () => _controller.toggleCompareMode(
+                        preferSplit: widget.config.enableSplitCompare,
                       )
                     : null,
               ),
@@ -1026,7 +1123,53 @@ class _PhotoEditorState extends State<PhotoEditor> {
   // Mobile Compact Studio Layout
   // ---------------------------------------------------------------------------
 
-  Widget _buildMobileLayout() {
+  Widget _buildMobileLayout(double viewportWidth) {
+    final toolCount = widget.config.tools.length;
+    final useScrollableNav = toolCount > 6 || viewportWidth < 360;
+    final itemWidth = math.max(58.0, viewportWidth / math.min(toolCount, 6));
+
+    Widget buildToolTab(PhotoEditorTool tool) {
+      final selected = _controller.activeTool == tool;
+      return InkWell(
+        onTap: () => _controller.setActiveTool(tool),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 140),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: selected
+                    ? _theme.accentColor.withValues(alpha: 0.16)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                _toolIcon(tool),
+                size: 19,
+                color: selected
+                    ? _theme.accentColor
+                    : _theme.secondaryTextColor,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _toolLabel(tool),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected
+                    ? _theme.accentColor
+                    : _theme.secondaryTextColor,
+                fontSize: 10.5,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return SafeArea(
       child: Column(
         children: <Widget>[
@@ -1066,8 +1209,8 @@ class _PhotoEditorState extends State<PhotoEditor> {
                   active: _controller.isComparingOriginal,
                   theme: _theme,
                   onPressed: _image != null
-                      ? () => _controller.setComparingOriginal(
-                          !_controller.isComparingOriginal,
+                      ? () => _controller.toggleCompareMode(
+                          preferSplit: widget.config.enableSplitCompare,
                         )
                       : null,
                 ),
@@ -1140,56 +1283,23 @@ class _PhotoEditorState extends State<PhotoEditor> {
                 ),
               ),
             ),
-            child: Row(
-              children: widget.config.tools.map((tool) {
-                final selected = _controller.activeTool == tool;
-                return Expanded(
-                  child: InkWell(
-                    onTap: () => _controller.setActiveTool(tool),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 140),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 3,
+            child: useScrollableNav
+                ? ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: widget.config.tools
+                        .map(
+                          (tool) => SizedBox(
+                            width: itemWidth,
+                            child: buildToolTab(tool),
                           ),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? _theme.accentColor.withValues(alpha: 0.16)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(
-                            _toolIcon(tool),
-                            size: 19,
-                            color: selected
-                                ? _theme.accentColor
-                                : _theme.secondaryTextColor,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _toolLabel(tool),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: selected
-                                ? _theme.accentColor
-                                : _theme.secondaryTextColor,
-                            fontSize: 10.5,
-                            fontWeight: selected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+                        )
+                        .toList(),
+                  )
+                : Row(
+                    children: widget.config.tools
+                        .map((tool) => Expanded(child: buildToolTab(tool)))
+                        .toList(),
                   ),
-                );
-              }).toList(),
-            ),
           ),
         ],
       ),

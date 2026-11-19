@@ -8,8 +8,8 @@ import '../../models/photo_editor_theme.dart';
 import '../../models/photo_filter.dart';
 import 'studio_widgets.dart';
 
-/// Color-grading filter selector panel with live image thumbnail previews and
-/// adjustable filter intensity.
+/// Color-grading filter selector panel with category tabs, live image
+/// thumbnail previews, and adjustable filter intensity.
 class FilterPanel extends StatelessWidget {
   /// Creates a [FilterPanel].
   const FilterPanel({
@@ -44,6 +44,50 @@ class FilterPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final activeFilter = controller.state.filter;
     final intensity = controller.state.filterIntensity;
+    final activeCategory = controller.activeFilterCategory;
+    final visibleFilters = PhotoFilters.forCategory(filters, activeCategory);
+
+    final categoryBar = SizedBox(
+      height: 30,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: isDesktop ? 16 : 14),
+        itemCount: PhotoFilterCategory.values.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          final cat = PhotoFilterCategory.values[index];
+          final selected = cat == activeCategory;
+          return GestureDetector(
+            onTap: () => controller.setFilterCategory(cat),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 140),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: selected
+                    ? theme.accentColor.withValues(alpha: 0.18)
+                    : theme.elevatedSurfaceColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: selected ? theme.accentColor : theme.borderColor,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  labels.filterCategoryLabel(cat),
+                  style: TextStyle(
+                    color: selected
+                        ? theme.accentColor
+                        : theme.secondaryTextColor,
+                    fontSize: 11,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
 
     final intensityWidget = !activeFilter.isOriginal
         ? StudioSliderRow(
@@ -77,9 +121,11 @@ class FilterPanel extends StatelessWidget {
               onAction: () => controller.selectFilter(PhotoFilters.original),
             ),
           ),
+          categoryBar,
+          const SizedBox(height: 8),
           if (intensityWidget != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: intensityWidget,
             ),
           Expanded(
@@ -91,9 +137,9 @@ class FilterPanel extends StatelessWidget {
                 mainAxisSpacing: 12,
                 childAspectRatio: 0.78,
               ),
-              itemCount: filters.length,
+              itemCount: visibleFilters.length,
               itemBuilder: (context, index) {
-                final filter = filters[index];
+                final filter = visibleFilters[index];
                 return _FilterThumbnailCard(
                   filter: filter,
                   thumbnail: thumbnail,
@@ -116,17 +162,19 @@ class FilterPanel extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
             child: intensityWidget,
           ),
+        const SizedBox(height: 4),
+        categoryBar,
         SizedBox(
-          height: 92,
+          height: 88,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            itemCount: filters.length,
+            itemCount: visibleFilters.length,
             separatorBuilder: (_, _) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
-              final filter = filters[index];
+              final filter = visibleFilters[index];
               return SizedBox(
-                width: 66,
+                width: 64,
                 child: _FilterThumbnailCard(
                   filter: filter,
                   thumbnail: thumbnail,
@@ -189,14 +237,14 @@ class _FilterThumbnailCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 4),
           Text(
             filter.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: selected ? theme.accentColor : theme.secondaryTextColor,
-              fontSize: 11,
+              fontSize: 10.5,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),

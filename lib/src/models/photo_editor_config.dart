@@ -15,17 +15,20 @@ enum PhotoEditorTool {
   /// Curated and custom color-grading filters with intensity blending.
   filters,
 
-  /// Fine-tuned brightness, contrast, saturation, exposure, warmth, and more.
+  /// Fine-tuned exposure, contrast, highlights, shadows, warmth, grain & more.
   adjust,
 
-  /// Freehand pen, highlighter, arrow, rectangle, and oval markup tools.
+  /// Freehand pen, marker, shapes, arrows, redaction boxes, and privacy blur.
   draw,
 
-  /// Styled multi-line text overlays with positioning, scaling, and rotation.
+  /// Styled multi-line text overlays with full typography & layer controls.
   text,
 
-  /// Emoji and badge stickers with positioning, scaling, and rotation.
+  /// Emoji stickers and crisp vector studio badges.
   stickers,
+
+  /// Studio frames, museum mats, Polaroid borders, letterbox, and rounded cards.
+  frames,
 }
 
 /// Controls how the editor adapts between mobile and desktop studio layouts.
@@ -41,7 +44,7 @@ enum PhotoEditorLayoutMode {
 }
 
 /// Configuration options controlling enabled tools, presets, theme, labels,
-/// and export settings for [PhotoEditor].
+/// and export settings for the photo editor.
 @immutable
 class PhotoEditorConfig {
   /// Creates a [PhotoEditorConfig].
@@ -53,13 +56,18 @@ class PhotoEditorConfig {
     this.adjustments = PhotoAdjustmentType.values,
     this.brushColors = defaultBrushColors,
     this.textColors = defaultTextColors,
+    this.frameColors = defaultFrameColors,
     this.stickers = defaultStickers,
+    this.studioBadges = defaultStudioBadges,
     this.exportOptions = const PhotoExportOptions(),
     this.layoutMode = PhotoEditorLayoutMode.auto,
     this.desktopBreakpoint = 840.0,
     this.maxHistoryLength = 50,
     this.enableZoomPan = true,
     this.enableKeyboardShortcuts = true,
+    this.enableSplitCompare = true,
+    this.enableSnapGuides = true,
+    this.showHistogram = true,
     this.showCloseButton = true,
     PhotoEditorTheme? theme,
     this.labels = const PhotoEditorLabels(),
@@ -78,6 +86,7 @@ class PhotoEditorConfig {
     PhotoEditorTool.draw,
     PhotoEditorTool.text,
     PhotoEditorTool.stickers,
+    PhotoEditorTool.frames,
   ];
 
   /// Default color swatch palette for drawing tools.
@@ -104,6 +113,18 @@ class PhotoEditorConfig {
     Color(0xFF4F8BFF),
     Color(0xFFA855F7),
     Color(0xFFFF8A3D),
+  ];
+
+  /// Default color palette for studio frames and gallery mats.
+  static const List<Color> defaultFrameColors = <Color>[
+    Color(0xFFFFFFFF),
+    Color(0xFFF5F0E6),
+    Color(0xFF0E1015),
+    Color(0xFF202531),
+    Color(0xFFD6C7B2),
+    Color(0xFF1D3557),
+    Color(0xFF4F8BFF),
+    Color(0xFFE63946),
   ];
 
   /// Default curated sticker/emoji collection.
@@ -134,6 +155,18 @@ class PhotoEditorConfig {
     '🏷️',
   ];
 
+  /// Default crisp cross-platform vector studio pill badges.
+  static const List<String> defaultStudioBadges = <String>[
+    'RAW',
+    'PRO',
+    '4K',
+    'HDR',
+    'NEW',
+    'LIVE',
+    '35MM',
+    '100%',
+  ];
+
   /// Ordered list of editing tools shown in the editor navigation.
   final List<PhotoEditorTool> tools;
 
@@ -155,8 +188,14 @@ class PhotoEditorConfig {
   /// Color swatches offered in the text overlay panel.
   final List<Color> textColors;
 
+  /// Color swatches offered in the frames & borders panel.
+  final List<Color> frameColors;
+
   /// Stickers/emojis offered in the sticker panel.
   final List<String> stickers;
+
+  /// Crisp studio badge strings rendered as vector pills.
+  final List<String> studioBadges;
 
   /// Default format, quality, and dimension bounds when exporting.
   final PhotoExportOptions exportOptions;
@@ -174,8 +213,18 @@ class PhotoEditorConfig {
   /// Whether interactive pinch/scroll zoom and pan is enabled on the canvas.
   final bool enableZoomPan;
 
-  /// Whether desktop/web keyboard shortcuts (Undo/Redo/Rotate/Delete) are active.
+  /// Whether desktop/web keyboard shortcuts (Undo/Redo/Nudge/Delete) are active.
   final bool enableKeyboardShortcuts;
+
+  /// Whether the interactive Before/After split-screen curtain comparison is enabled.
+  final bool enableSplitCompare;
+
+  /// Whether Canva-style magnetic center snap alignment guides appear when
+  /// dragging text or sticker layers.
+  final bool enableSnapGuides;
+
+  /// Whether the live RGB luminance histogram is shown in the desktop Adjust panel.
+  final bool showHistogram;
 
   /// Whether a Cancel/Close button is shown in the top bar.
   final bool showCloseButton;

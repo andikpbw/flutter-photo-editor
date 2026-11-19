@@ -12,10 +12,24 @@ import '../models/photo_edit_state.dart';
 import '../models/photo_editor_config.dart';
 import '../models/photo_editor_result.dart';
 import '../models/photo_filter.dart';
+import '../models/photo_frame.dart';
 import '../models/photo_transform.dart';
 
+/// Controls before/after original image comparison mode on the canvas.
+enum PhotoCompareMode {
+  /// Standard live editing preview.
+  off,
+
+  /// Interactive split-screen curtain divider comparing Before and After.
+  splitCurtain,
+
+  /// Full-canvas unmodified original photo preview.
+  fullOriginal,
+}
+
 /// Stateful controller that manages non-destructive photo edits, undo/redo
-/// history, active tools, live drawing strokes, overlay selection, and export.
+/// history, active tools, split comparison, studio frames, live drawing
+/// strokes, overlay layers, and full-resolution export.
 ///
 /// Can be passed directly to [PhotoEditor] for programmatic control or used
 /// headless with [PhotoExportEngine] to build completely custom editing UIs.
@@ -42,8 +56,9 @@ class PhotoEditorController extends ChangeNotifier {
 
   PhotoEditState? _interactionBaseline;
   PhotoEditorTool _activeTool;
+  PhotoFilterCategory _activeFilterCategory = PhotoFilterCategory.all;
   CropAspectRatio _activeAspectRatio = CropAspectRatio.free;
-  PhotoAdjustmentType _activeAdjustment = PhotoAdjustmentType.brightness;
+  PhotoAdjustmentType _activeAdjustment = PhotoAdjustmentType.exposure;
 
   BrushTool _brushTool = BrushTool.pen;
   Color _brushColor;
@@ -52,7 +67,8 @@ class PhotoEditorController extends ChangeNotifier {
   DrawingStroke? _activeStroke;
 
   String? _selectedOverlayId;
-  bool _isComparingOriginal = false;
+  PhotoCompareMode _compareMode = PhotoCompareMode.off;
+  double _splitPosition = 0.5;
   double _zoomScale = 1.0;
   int _idCounter = 0;
 
@@ -61,6 +77,9 @@ class PhotoEditorController extends ChangeNotifier {
 
   /// Currently selected top-level editing tool.
   PhotoEditorTool get activeTool => _activeTool;
+
+  /// Currently active filter browser category.
+  PhotoFilterCategory get activeFilterCategory => _activeFilterCategory;
 
   /// Currently selected crop aspect ratio preset.
   CropAspectRatio get activeAspectRatio => _activeAspectRatio;
@@ -100,8 +119,15 @@ class PhotoEditorController extends ChangeNotifier {
     return null;
   }
 
-  /// Whether the canvas is temporarily displaying the unmodified original photo.
-  bool get isComparingOriginal => _isComparingOriginal;
+  /// Active before/after comparison presentation mode.
+  PhotoCompareMode get compareMode => _compareMode;
+
+  /// Normalized horizontal divider position (`0.05..0.95`) for
+  /// [PhotoCompareMode.splitCurtain].
+  double get splitPosition => _splitPosition;
+
+  /// Whether any original-image comparison mode is currently active.
+  bool get isComparingOriginal => _compareMode != PhotoCompareMode.off;
 
   /// Current canvas zoom factor (`1.0` = fit to viewport).
   double get zoomScale => _zoomScale;
@@ -174,6 +200,18 @@ class PhotoEditorController extends ChangeNotifier {
     if (tool != PhotoEditorTool.text && tool != PhotoEditorTool.stickers) {
       _selectedOverlayId = null;
     }
+    if (tool == PhotoEditorTool.crop && _compareMode != PhotoCompareMode.off) {
+      _compareMode = PhotoCompareMode.off;
+    }
+    notifyListeners();
+  }
+
+  /// Changes the visible filter browser [category].
+  void setFilterCategory(PhotoFilterCategory category) {
+    if (_activeFilterCategory == category) {
+      return;
+    }
+    _activeFilterCategory = category;
     notifyListeners();
   }
 
@@ -186,12 +224,42 @@ class PhotoEditorController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Toggles or explicitly sets original comparison preview mode.
-  void setComparingOriginal(bool comparing) {
-    if (_isComparingOriginal == comparing) {
+  /// Sets the comparison [mode] explicitly.
+  void setCompareMode(PhotoCompareMode mode) {
+    if (_compareMode == mode) {
       return;
     }
-    _isComparingOriginal = comparing;
+    _compareMode = mode;
+    notifyListeners();
+  }
+
+  /// Toggles before/after comparison on or off, preferring interactive
+  /// split-screen curtain mode when [preferSplit] is `true`.
+  void toggleCompareMode({bool preferSplit = true}) {
+    if (_compareMode == PhotoCompareMode.off) {
+      _compareMode = preferSplit
+          ? PhotoCompareMode.splitCurtain
+          : PhotoCompareMode.fullOriginal;
+    } else {
+      _compareMode = PhotoCompareMode.off;
+    }
+    notifyListeners();
+  }
+
+  /// Toggles or explicitly sets full-original comparison preview mode.
+  void setComparingOriginal(bool comparing) {
+    setCompareMode(
+      comparing ? PhotoCompareMode.fullOriginal : PhotoCompareMode.off,
+    );
+  }
+
+  /// Updates the split-screen curtain [position] (`0.05` to `0.95`).
+  void setSplitPosition(double position) {
+    final clamped = position.clamp(0.05, 0.95);
+    if ((_splitPosition - clamped).abs() < 1e-4) {
+      return;
+    }
+    _splitPosition = clamped;
     notifyListeners();
   }
 
@@ -234,12 +302,13 @@ class PhotoEditorController extends ChangeNotifier {
     _applyState(newState, recordHistory: recordHistory);
   }
 
-  /// Resets all filters, adjustments, transforms, strokes, and overlays back
-  /// to [PhotoEditState.initial].
+  /// Resets all filters, adjustments, transforms, frames, strokes, and
+  /// overlays back to [PhotoEditState.initial].
   void resetAll() {
     _activeAspectRatio = CropAspectRatio.free;
     _selectedOverlayId = null;
     _activeStroke = null;
+    _compareMode = PhotoCompareMode.off;
     _applyState(PhotoEditState.initial);
   }
 
@@ -289,7 +358,7 @@ class PhotoEditorController extends ChangeNotifier {
     setAdjustment(type, 0.0);
   }
 
-  /// Resets all tonal, color, vignette, and blur adjustments back to default.
+  /// Resets all tonal, color, vignette, grain, and blur adjustments to default.
   void resetAdjustments() {
     _applyState(_state.copyWith(adjustments: PhotoAdjustments.none));
   }
@@ -431,6 +500,48 @@ class PhotoEditorController extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
+  // Studio Frames & Borders
+  // ---------------------------------------------------------------------------
+
+  /// Sets the active studio [style] for the outer frame.
+  void setFrameStyle(PhotoFrameStyle style) {
+    final defaultColor = style == PhotoFrameStyle.cinema
+        ? const Color(0xFF0E1015)
+        : _state.frame.color;
+    _applyState(
+      _state.copyWith(
+        frame: _state.frame.copyWith(style: style, color: defaultColor),
+      ),
+    );
+  }
+
+  /// Sets the studio frame backdrop [color].
+  void setFrameColor(Color color) {
+    _applyState(_state.copyWith(frame: _state.frame.copyWith(color: color)));
+  }
+
+  /// Sets the studio frame border [thickness] (`0.05` to `1.0`).
+  void setFrameThickness(double thickness, {bool recordHistory = true}) {
+    _applyState(
+      _state.copyWith(frame: _state.frame.copyWith(thickness: thickness)),
+      recordHistory: recordHistory,
+    );
+  }
+
+  /// Sets the inner photo [cornerRadius] (`0.0` to `1.0`).
+  void setFrameCornerRadius(double cornerRadius, {bool recordHistory = true}) {
+    _applyState(
+      _state.copyWith(frame: _state.frame.copyWith(cornerRadius: cornerRadius)),
+      recordHistory: recordHistory,
+    );
+  }
+
+  /// Resets the frame back to [PhotoFrame.none].
+  void resetFrame() {
+    _applyState(_state.copyWith(frame: PhotoFrame.none));
+  }
+
+  // ---------------------------------------------------------------------------
   // Drawing & Markup
   // ---------------------------------------------------------------------------
 
@@ -492,9 +603,7 @@ class PhotoEditorController extends ChangeNotifier {
     if (current == null) {
       return;
     }
-    if (current.tool == BrushTool.arrow ||
-        current.tool == BrushTool.rectangle ||
-        current.tool == BrushTool.oval) {
+    if (current.isTwoPointShape) {
       _activeStroke = current.copyWith(
         points: <Offset>[current.points.first, normalizedPoint],
       );
@@ -549,7 +658,7 @@ class PhotoEditorController extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------------
-  // Text & Sticker Overlays
+  // Text, Sticker & Studio Badge Overlays
   // ---------------------------------------------------------------------------
 
   /// Selects an overlay by [id], or clears selection when `null`.
@@ -574,6 +683,9 @@ class PhotoEditorController extends ChangeNotifier {
     FontStyle fontStyle = FontStyle.normal,
     String? fontFamily,
     TextAlign textAlign = TextAlign.center,
+    double letterSpacing = 0.0,
+    double lineHeight = 1.2,
+    bool hasShadow = true,
   }) {
     final crop = _state.transform.cropRect;
     final layer = TextOverlayLayer(
@@ -588,6 +700,9 @@ class PhotoEditorController extends ChangeNotifier {
       fontStyle: fontStyle,
       fontFamily: fontFamily,
       textAlign: textAlign,
+      letterSpacing: letterSpacing,
+      lineHeight: lineHeight,
+      hasShadow: hasShadow,
     );
     _selectedOverlayId = layer.id;
     _applyState(
@@ -614,6 +729,37 @@ class PhotoEditorController extends ChangeNotifier {
       content: content,
       position: position ?? crop.center,
       baseSize: baseSize,
+    );
+    _selectedOverlayId = layer.id;
+    _applyState(
+      _state.copyWith(
+        overlays: List<PhotoOverlayLayer>.unmodifiable(<PhotoOverlayLayer>[
+          ..._state.overlays,
+          layer,
+        ]),
+      ),
+    );
+    return layer;
+  }
+
+  /// Adds a crisp cross-platform vector studio pill badge (such as `RAW`,
+  /// `PRO`, or `4K`) and selects it.
+  StickerOverlayLayer addBadgeLayer(
+    String label, {
+    Offset? position,
+    Color badgeColor = const Color(0xFF4F8BFF),
+    double baseSize = 0.12,
+    String? fontFamily,
+  }) {
+    final crop = _state.transform.cropRect;
+    final layer = StickerOverlayLayer(
+      id: _nextId('badge'),
+      content: label,
+      position: position ?? crop.center,
+      baseSize: baseSize,
+      isBadge: true,
+      badgeColor: badgeColor,
+      fontFamily: fontFamily,
     );
     _selectedOverlayId = layer.id;
     _applyState(
@@ -656,6 +802,58 @@ class PhotoEditorController extends ChangeNotifier {
     );
   }
 
+  /// Moves the overlay with [id] one slot forward in stacking order.
+  void moveOverlayForward(String id) {
+    final idx = _state.overlays.indexWhere((o) => o.id == id);
+    if (idx == -1 || idx >= _state.overlays.length - 1) {
+      return;
+    }
+    final next = List<PhotoOverlayLayer>.of(_state.overlays);
+    final item = next.removeAt(idx);
+    next.insert(idx + 1, item);
+    _applyState(
+      _state.copyWith(overlays: List<PhotoOverlayLayer>.unmodifiable(next)),
+    );
+  }
+
+  /// Moves the overlay with [id] one slot backward in stacking order.
+  void moveOverlayBackward(String id) {
+    final idx = _state.overlays.indexWhere((o) => o.id == id);
+    if (idx <= 0) {
+      return;
+    }
+    final next = List<PhotoOverlayLayer>.of(_state.overlays);
+    final item = next.removeAt(idx);
+    next.insert(idx - 1, item);
+    _applyState(
+      _state.copyWith(overlays: List<PhotoOverlayLayer>.unmodifiable(next)),
+    );
+  }
+
+  /// Toggles visibility of the overlay matching [id].
+  void toggleOverlayVisibility(String id) {
+    final idx = _state.overlays.indexWhere((o) => o.id == id);
+    if (idx == -1) {
+      return;
+    }
+    final current = _state.overlays[idx];
+    updateOverlay(current.copyTransform(isVisible: !current.isVisible));
+  }
+
+  /// Nudges the currently selected overlay by [normalizedDelta] (clamped to
+  /// `[0.0, 1.0]`), useful for keyboard arrow fine-positioning.
+  void nudgeSelectedOverlay(Offset normalizedDelta) {
+    final current = selectedOverlay;
+    if (current == null) {
+      return;
+    }
+    final nextPos = Offset(
+      (current.position.dx + normalizedDelta.dx).clamp(0.0, 1.0),
+      (current.position.dy + normalizedDelta.dy).clamp(0.0, 1.0),
+    );
+    updateOverlay(current.copyTransform(position: nextPos));
+  }
+
   /// Duplicates the currently selected overlay with a slight positional offset.
   void duplicateSelectedOverlay() {
     final current = selectedOverlay;
@@ -672,7 +870,7 @@ class PhotoEditorController extends ChangeNotifier {
         position: offsetPos,
       ),
       StickerOverlayLayer() => current.copyWith(
-        id: _nextId('sticker'),
+        id: _nextId(current.isBadge ? 'badge' : 'sticker'),
         position: offsetPos,
       ),
     };

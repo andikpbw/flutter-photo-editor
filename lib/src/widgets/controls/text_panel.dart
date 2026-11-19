@@ -8,8 +8,8 @@ import '../../models/photo_editor_labels.dart';
 import '../../models/photo_editor_theme.dart';
 import 'studio_widgets.dart';
 
-/// Controls for creating, styling, aligning, scaling, rotating, and managing
-/// text overlay layers.
+/// Controls for creating, styling, aligning, spacing, scaling, rotating,
+/// reordering, and toggling visibility on text overlay layers.
 class TextPanel extends StatelessWidget {
   /// Creates a [TextPanel].
   const TextPanel({
@@ -93,7 +93,7 @@ class TextPanel extends StatelessWidget {
             ],
           ),
           if (selectedText != null) ...<Widget>[
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             StudioSectionHeader(
               title: labels.textStyle.toUpperCase(),
               theme: theme,
@@ -104,13 +104,13 @@ class TextPanel extends StatelessWidget {
               controller: controller,
               theme: theme,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             _TypographyRow(
               layer: selectedText,
               controller: controller,
               theme: theme,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             StudioSectionHeader(
               title: labels.textColor.toUpperCase(),
               theme: theme,
@@ -124,7 +124,7 @@ class TextPanel extends StatelessWidget {
               onSelected: (c) =>
                   controller.updateOverlay(selectedText.copyWith(color: c)),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             StudioSliderRow(
               label: labels.textScale,
               icon: Icons.zoom_out_map_rounded,
@@ -143,7 +143,7 @@ class TextPanel extends StatelessWidget {
               onReset: () =>
                   controller.updateOverlay(selectedText.copyWith(scale: 1.0)),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             StudioSliderRow(
               label: labels.textRotation,
               icon: Icons.rotate_right_rounded,
@@ -166,7 +166,45 @@ class TextPanel extends StatelessWidget {
                 selectedText.copyWith(rotation: 0.0),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 8),
+            StudioSliderRow(
+              label: labels.letterSpacing,
+              icon: Icons.space_bar_rounded,
+              value: selectedText.letterSpacing,
+              min: -1.5,
+              max: 10.0,
+              valueText: selectedText.letterSpacing.toStringAsFixed(1),
+              theme: theme,
+              onChangeStart: (_) => controller.beginInteraction(),
+              onChanged: (v) => controller.updateOverlay(
+                selectedText.copyWith(letterSpacing: v),
+                recordHistory: false,
+              ),
+              onChangeEnd: (_) => controller.commitInteraction(),
+              onReset: () => controller.updateOverlay(
+                selectedText.copyWith(letterSpacing: 0.0),
+              ),
+            ),
+            const SizedBox(height: 8),
+            StudioSliderRow(
+              label: labels.layerOpacity,
+              icon: Icons.opacity_rounded,
+              value: selectedText.opacity,
+              min: 0.15,
+              max: 1.0,
+              defaultValue: 1.0,
+              valueText: '${(selectedText.opacity * 100).round()}%',
+              theme: theme,
+              onChangeStart: (_) => controller.beginInteraction(),
+              onChanged: (v) => controller.updateOverlay(
+                selectedText.copyWith(opacity: v),
+                recordHistory: false,
+              ),
+              onChangeEnd: (_) => controller.commitInteraction(),
+              onReset: () =>
+                  controller.updateOverlay(selectedText.copyWith(opacity: 1.0)),
+            ),
+            const SizedBox(height: 12),
             Row(
               children: <Widget>[
                 Expanded(
@@ -211,13 +249,13 @@ class TextPanel extends StatelessWidget {
             ),
           ],
           if (textLayers.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             StudioSectionHeader(
               title: labels.layersHeading.toUpperCase(),
               theme: theme,
             ),
             const SizedBox(height: 8),
-            ...textLayers.map((layer) {
+            ...textLayers.reversed.map((layer) {
               final active = layer.id == selectedText?.id;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 6),
@@ -228,7 +266,7 @@ class TextPanel extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
-                      vertical: 8,
+                      vertical: 7,
                     ),
                     decoration: BoxDecoration(
                       color: active
@@ -241,12 +279,20 @@ class TextPanel extends StatelessWidget {
                     ),
                     child: Row(
                       children: <Widget>[
-                        Icon(
-                          Icons.text_fields_rounded,
-                          size: 16,
-                          color: active
-                              ? theme.accentColor
-                              : theme.secondaryTextColor,
+                        InkWell(
+                          onTap: () =>
+                              controller.toggleOverlayVisibility(layer.id),
+                          child: Icon(
+                            layer.isVisible
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            size: 15,
+                            color: layer.isVisible
+                                ? theme.accentColor
+                                : theme.secondaryTextColor.withValues(
+                                    alpha: 0.5,
+                                  ),
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -255,12 +301,32 @@ class TextPanel extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: theme.primaryTextColor,
+                              color: layer.isVisible
+                                  ? theme.primaryTextColor
+                                  : theme.secondaryTextColor,
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
+                        InkWell(
+                          onTap: () => controller.moveOverlayForward(layer.id),
+                          child: Icon(
+                            Icons.arrow_upward_rounded,
+                            size: 14,
+                            color: theme.secondaryTextColor,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        InkWell(
+                          onTap: () => controller.moveOverlayBackward(layer.id),
+                          child: Icon(
+                            Icons.arrow_downward_rounded,
+                            size: 14,
+                            color: theme.secondaryTextColor,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
                         InkWell(
                           onTap: () => controller.deleteOverlay(layer.id),
                           child: Icon(
@@ -311,7 +377,7 @@ class TextPanel extends StatelessWidget {
                 ),
               ),
               if (selectedText != null) ...<Widget>[
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 IconButton(
                   onPressed: () => onEditText(selectedText),
                   icon: const Icon(Icons.edit_outlined, size: 18),

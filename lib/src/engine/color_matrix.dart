@@ -216,6 +216,44 @@ abstract final class PhotoColorMatrix {
     ];
   }
 
+  /// Builds a skin-tone-aware vibrance matrix (`value` in `[-1.0, 1.0]`) that
+  /// preferentially boosts cool and natural foliage channels with gentle red
+  /// preservation.
+  static List<double> vibrance(double value) {
+    final v = value.clamp(-1.0, 1.0);
+    if (v == 0.0) {
+      return List<double>.of(identity);
+    }
+    final sR = 1.0 + v * 0.36;
+    final sG = 1.0 + v * 0.56;
+    final sB = 1.0 + v * 0.68;
+    const rw = 0.2126;
+    const gw = 0.7152;
+    const bw = 0.0722;
+    return <double>[
+      (1 - sR) * rw + sR,
+      (1 - sR) * gw,
+      (1 - sR) * bw,
+      0,
+      0,
+      (1 - sG) * rw,
+      (1 - sG) * gw + sG,
+      (1 - sG) * bw,
+      0,
+      0,
+      (1 - sB) * rw,
+      (1 - sB) * gw,
+      (1 - sB) * bw + sB,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+    ];
+  }
+
   /// Builds a color-temperature warmth matrix (`-1.0` cool blue to `1.0` warm amber).
   static List<double> warmth(double value) {
     final v = value.clamp(-1.0, 1.0);
@@ -351,6 +389,9 @@ abstract final class PhotoColorMatrix {
     }
     if (adjustments.saturation != 0.0) {
       result = multiply(saturation(adjustments.saturation), result);
+    }
+    if (adjustments.vibrance != 0.0) {
+      result = multiply(vibrance(adjustments.vibrance), result);
     }
     if (adjustments.warmth != 0.0) {
       result = multiply(warmth(adjustments.warmth), result);

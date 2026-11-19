@@ -10,11 +10,14 @@ import '../../models/overlay_layer.dart';
 import '../../models/photo_edit_state.dart';
 import '../../models/photo_editor_config.dart';
 import '../../models/photo_editor_theme.dart';
+import '../../models/photo_frame.dart';
 import '../../models/photo_transform.dart';
 import 'crop_overlay.dart';
 
-/// Interactive studio canvas that renders the live edited photo, crop handles,
-/// drawing surface, and draggable/scalable/rotatable text & sticker overlays.
+/// Interactive studio canvas that renders the live edited photo, studio frames,
+/// split-screen before/after curtain, interactive crop handles, vector markup
+/// & privacy blur surface, magnetic center snap guides, and draggable/scalable/
+/// rotatable text, sticker, and studio-badge overlays.
 ///
 /// Can be embedded standalone when building a custom photo editor UI around
 /// [PhotoEditorController].
@@ -26,7 +29,10 @@ class PhotoEditorCanvas extends StatefulWidget {
     required this.controller,
     this.theme,
     this.enableZoomPan = true,
+    this.enableSnapGuides = true,
     this.originalBadgeLabel = 'ORIGINAL',
+    this.beforeBadgeLabel = 'BEFORE',
+    this.afterBadgeLabel = 'AFTER',
     this.transformationController,
     this.onEditTextLayer,
   });
@@ -34,7 +40,7 @@ class PhotoEditorCanvas extends StatefulWidget {
   /// Source decoded image being edited.
   final ui.Image image;
 
-  /// Controller holding edit state, active tool, and selection.
+  /// Controller holding edit state, active tool, compare mode, and selection.
   final PhotoEditorController controller;
 
   /// Optional theme overrides (defaults to [PhotoEditorTheme.dark]).
@@ -43,8 +49,17 @@ class PhotoEditorCanvas extends StatefulWidget {
   /// Whether interactive pinch/scroll zoom and pan is enabled.
   final bool enableZoomPan;
 
-  /// Floating badge label displayed while comparing against the original image.
+  /// Whether magnetic center alignment guides appear while dragging overlays.
+  final bool enableSnapGuides;
+
+  /// Floating badge label displayed in full-original comparison mode.
   final String originalBadgeLabel;
+
+  /// Left badge label displayed in split-screen comparison mode.
+  final String beforeBadgeLabel;
+
+  /// Right badge label displayed in split-screen comparison mode.
+  final String afterBadgeLabel;
 
   /// Optional external [TransformationController] for synchronizing desktop
   /// toolbar zoom controls.
@@ -68,13 +83,8 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
   double _handleStartAngle = 0.0;
   double _handleStartDistance = 1.0;
 
-  Offset _frameLocalToGlobal(Offset localPoint) {
-    final box = _frameKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) {
-      return localPoint;
-    }
-    return box.localToGlobal(localPoint);
-  }
+  bool _snappedVerticalCenter = false;
+  bool _snappedHorizontalCenter = false;
 
   TransformationController get _transformController =>
       widget.transformationController ??
@@ -112,19 +122,32 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
     widget.controller.setZoomScale(1.0);
   }
 
-  Offset _localToNormalized(Offset local, Size canvasSize, Rect visibleRect) {
-    final u = (local.dx / math.max(1.0, canvasSize.width)).clamp(0.0, 1.0);
-    final v = (local.dy / math.max(1.0, canvasSize.height)).clamp(0.0, 1.0);
+  Offset _frameLocalToGlobal(Offset localPoint) {
+    final box = _frameKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      return localPoint;
+    }
+    return box.localToGlobal(localPoint);
+  }
+
+  Offset _localToNormalized(Offset local, Rect contentRect, Rect visibleRect) {
+    final u = ((local.dx - contentRect.left) / math.max(1.0, contentRect.width))
+        .clamp(0.0, 1.0);
+    final v = ((local.dy - contentRect.top) / math.max(1.0, contentRect.height))
+        .clamp(0.0, 1.0);
     return Offset(
       visibleRect.left + u * visibleRect.width,
       visibleRect.top + v * visibleRect.height,
     );
   }
 
-  Offset _normalizedToLocal(Offset norm, Size canvasSize, Rect visibleRect) {
+  Offset _normalizedToLocal(Offset norm, Rect contentRect, Rect visibleRect) {
     final u = (norm.dx - visibleRect.left) / math.max(1e-5, visibleRect.width);
     final v = (norm.dy - visibleRect.top) / math.max(1e-5, visibleRect.height);
-    return Offset(u * canvasSize.width, v * canvasSize.height);
+    return Offset(
+      contentRect.left + u * contentRect.width,
+      contentRect.top + v * contentRect.height,
+    );
   }
 
   @override
@@ -141,6 +164,10 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
           widget.image.height.toDouble(),
         );
         final orientedSize = state.transform.orientedSize(sourceSize);
+        final isFullOriginal =
+            controller.compareMode == PhotoCompareMode.fullOriginal;
+        final isSplitCompare =
+            controller.compareMode == PhotoCompareMode.splitCurtain;
         final isCropMode =
             controller.activeTool == PhotoEditorTool.crop &&
             !controller.isComparingOriginal;
@@ -156,13 +183,16 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
             ? PhotoTransform.fullCropRect
             : state.transform.cropRect;
 
-        final displayAspect = controller.isComparingOriginal
+        final displayAspect = isFullOriginal
             ? sourceSize.width / math.max(1.0, sourceSize.height)
             : (orientedSize.width * visibleRect.width) /
                   math.max(1.0, orientedSize.height * visibleRect.height);
 
         final allowInteractiveViewer =
-            widget.enableZoomPan && !isCropMode && !isDrawMode;
+            widget.enableZoomPan &&
+            !isCropMode &&
+            !isDrawMode &&
+            !isSplitCompare;
 
         return Container(
           color: theme.canvasBackground,
@@ -181,7 +211,12 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                 frameW = availW;
                 frameH = frameW / displayAspect;
               }
-              final canvasSize = Size(frameW, frameH);
+              final outerSize = Size(frameW, frameH);
+              final activeFrame = isCropMode ? PhotoFrame.none : state.frame;
+              final contentRect = PhotoSceneRenderer.computeFramedContentRect(
+                outerSize,
+                activeFrame,
+              );
 
               Widget photoFrame = SizedBox(
                 key: _frameKey,
@@ -200,18 +235,47 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: <Widget>[
-                      // Primary WYSIWYG scene painter.
+                      // Primary WYSIWYG scene painter (normal or split curtain).
                       Positioned.fill(
                         child: CustomPaint(
                           painter: _PhotoScenePainter(
                             image: widget.image,
                             state: state,
                             showFullUncropped: isCropMode,
-                            showOriginal: controller.isComparingOriginal,
+                            compareMode: controller.compareMode,
+                            splitPosition: controller.splitPosition,
                             activeStroke: controller.activeStroke,
                           ),
                         ),
                       ),
+
+                      // Interactive Canva/Figma magnetic center snap guides.
+                      if (isOverlayMode &&
+                          (_snappedVerticalCenter || _snappedHorizontalCenter))
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: CustomPaint(
+                              painter: _SnapGuidesPainter(
+                                contentRect: contentRect,
+                                showVertical: _snappedVerticalCenter,
+                                showHorizontal: _snappedHorizontalCenter,
+                                color: theme.accentColor,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      // Interactive split-screen before/after curtain divider.
+                      if (isSplitCompare)
+                        Positioned.fill(
+                          child: _SplitCompareCurtain(
+                            splitPosition: controller.splitPosition,
+                            beforeLabel: widget.beforeBadgeLabel,
+                            afterLabel: widget.afterBadgeLabel,
+                            accentColor: theme.accentColor,
+                            onChanged: controller.setSplitPosition,
+                          ),
+                        ),
 
                       // Interactive crop frame overlay.
                       if (isCropMode)
@@ -234,7 +298,7 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                           ),
                         ),
 
-                      // Interactive drawing surface.
+                      // Interactive drawing & privacy-blur surface.
                       if (isDrawMode)
                         Positioned.fill(
                           child: GestureDetector(
@@ -243,7 +307,7 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                               controller.startStroke(
                                 _localToNormalized(
                                   details.localPosition,
-                                  canvasSize,
+                                  contentRect,
                                   visibleRect,
                                 ),
                               );
@@ -252,7 +316,7 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                               controller.appendStrokePoint(
                                 _localToNormalized(
                                   details.localPosition,
-                                  canvasSize,
+                                  contentRect,
                                   visibleRect,
                                 ),
                               );
@@ -265,9 +329,8 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                       // Interactive overlay hit targets & selection frame.
                       if (isOverlayMode)
                         ..._buildOverlayInteractionLayers(
-                          context: context,
                           controller: controller,
-                          canvasSize: canvasSize,
+                          contentRect: contentRect,
                           orientedSize: orientedSize,
                           visibleRect: visibleRect,
                           theme: theme,
@@ -303,7 +366,7 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                 fit: StackFit.expand,
                 children: <Widget>[
                   photoFrame,
-                  if (controller.isComparingOriginal)
+                  if (isFullOriginal)
                     Positioned(
                       top: 14,
                       left: 0,
@@ -345,22 +408,24 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
   }
 
   List<Widget> _buildOverlayInteractionLayers({
-    required BuildContext context,
     required PhotoEditorController controller,
-    required Size canvasSize,
+    required Rect contentRect,
     required Size orientedSize,
     required Rect visibleRect,
     required PhotoEditorTheme theme,
   }) {
     final visiblePxW = math.max(1.0, visibleRect.width * orientedSize.width);
-    final canvasScale = canvasSize.width / visiblePxW;
+    final canvasScale = contentRect.width / visiblePxW;
     final widgets = <Widget>[];
 
     for (final overlay in controller.state.overlays) {
+      if (!overlay.isVisible) {
+        continue;
+      }
       final isSelected = controller.selectedOverlayId == overlay.id;
       final center = _normalizedToLocal(
         overlay.position,
-        canvasSize,
+        contentRect,
         visibleRect,
       );
       final baseSize = PhotoSceneRenderer.measureOverlaySize(
@@ -416,28 +481,65 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
                       final deltaPx =
                           (details.globalPosition - _dragStartGlobal) /
                           math.max(1.0, controller.zoomScale);
-                      final nextNorm = Offset(
-                        (_dragStartNormPos.dx +
-                                (deltaPx.dx / math.max(1.0, canvasSize.width)) *
-                                    visibleRect.width)
-                            .clamp(0.0, 1.0),
-                        (_dragStartNormPos.dy +
-                                (deltaPx.dy /
-                                        math.max(1.0, canvasSize.height)) *
-                                    visibleRect.height)
-                            .clamp(0.0, 1.0),
-                      );
+                      var nextX =
+                          (_dragStartNormPos.dx +
+                                  (deltaPx.dx /
+                                          math.max(1.0, contentRect.width)) *
+                                      visibleRect.width)
+                              .clamp(0.0, 1.0);
+                      var nextY =
+                          (_dragStartNormPos.dy +
+                                  (deltaPx.dy /
+                                          math.max(1.0, contentRect.height)) *
+                                      visibleRect.height)
+                              .clamp(0.0, 1.0);
+
+                      var snapV = false;
+                      var snapH = false;
+                      if (widget.enableSnapGuides) {
+                        final snapTolX = visibleRect.width * 0.018;
+                        final snapTolY = visibleRect.height * 0.018;
+                        if ((nextX - visibleRect.center.dx).abs() <= snapTolX) {
+                          nextX = visibleRect.center.dx;
+                          snapV = true;
+                        }
+                        if ((nextY - visibleRect.center.dy).abs() <= snapTolY) {
+                          nextY = visibleRect.center.dy;
+                          snapH = true;
+                        }
+                      }
+
+                      if (snapV != _snappedVerticalCenter ||
+                          snapH != _snappedHorizontalCenter) {
+                        setState(() {
+                          _snappedVerticalCenter = snapV;
+                          _snappedHorizontalCenter = snapH;
+                        });
+                      }
+
                       controller.updateOverlay(
-                        overlay.copyTransform(position: nextNorm),
+                        overlay.copyTransform(position: Offset(nextX, nextY)),
                         recordHistory: false,
                       );
                     },
                     onPanEnd: (_) {
                       _draggingOverlayId = null;
+                      if (_snappedVerticalCenter || _snappedHorizontalCenter) {
+                        setState(() {
+                          _snappedVerticalCenter = false;
+                          _snappedHorizontalCenter = false;
+                        });
+                      }
                       controller.commitInteraction();
                     },
                     onPanCancel: () {
                       _draggingOverlayId = null;
+                      if (_snappedVerticalCenter || _snappedHorizontalCenter) {
+                        setState(() {
+                          _snappedVerticalCenter = false;
+                          _snappedHorizontalCenter = false;
+                        });
+                      }
                       controller.commitInteraction();
                     },
                     child: Container(
@@ -536,30 +638,220 @@ class _PhotoEditorCanvasState extends State<PhotoEditorCanvas> {
   }
 }
 
+class _SplitCompareCurtain extends StatelessWidget {
+  const _SplitCompareCurtain({
+    required this.splitPosition,
+    required this.beforeLabel,
+    required this.afterLabel,
+    required this.accentColor,
+    required this.onChanged,
+  });
+
+  final double splitPosition;
+  final String beforeLabel;
+  final String afterLabel;
+  final Color accentColor;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = math.max(1.0, constraints.maxWidth);
+        final h = math.max(1.0, constraints.maxHeight);
+        final splitX = w * splitPosition.clamp(0.05, 0.95);
+
+        void updateFromX(double dx) {
+          onChanged((dx / w).clamp(0.05, 0.95));
+        }
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragStart: (d) => updateFromX(d.localPosition.dx),
+          onHorizontalDragUpdate: (d) => updateFromX(d.localPosition.dx),
+          onTapDown: (d) => updateFromX(d.localPosition.dx),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              // Vertical hairline divider.
+              Positioned(
+                left: splitX - 1.0,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: 2.0,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Draggable center thumb knob.
+              Positioned(
+                left: splitX - 18,
+                top: h / 2 - 18,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.72),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2.0),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: accentColor.withValues(alpha: 0.45),
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.compare_arrows_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+
+              // BEFORE pill (top-left).
+              if (splitX > 70)
+                Positioned(
+                  left: 12,
+                  top: 12,
+                  child: _SplitBadge(label: beforeLabel),
+                ),
+
+              // AFTER pill (top-right).
+              if (w - splitX > 70)
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: _SplitBadge(label: afterLabel, accent: accentColor),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SplitBadge extends StatelessWidget {
+  const _SplitBadge({required this.label, this.accent});
+
+  final String label;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: accent != null
+            ? accent!.withValues(alpha: 0.85)
+            : Colors.black.withValues(alpha: 0.68),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.0,
+        ),
+      ),
+    );
+  }
+}
+
+class _SnapGuidesPainter extends CustomPainter {
+  const _SnapGuidesPainter({
+    required this.contentRect,
+    required this.showVertical,
+    required this.showHorizontal,
+    required this.color,
+  });
+
+  final Rect contentRect;
+  final bool showVertical;
+  final bool showHorizontal;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.9)
+      ..strokeWidth = 1.25;
+    if (showVertical) {
+      canvas.drawLine(
+        Offset(contentRect.center.dx, contentRect.top),
+        Offset(contentRect.center.dx, contentRect.bottom),
+        paint,
+      );
+    }
+    if (showHorizontal) {
+      canvas.drawLine(
+        Offset(contentRect.left, contentRect.center.dy),
+        Offset(contentRect.right, contentRect.center.dy),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SnapGuidesPainter oldDelegate) {
+    return oldDelegate.contentRect != contentRect ||
+        oldDelegate.showVertical != showVertical ||
+        oldDelegate.showHorizontal != showHorizontal ||
+        oldDelegate.color != color;
+  }
+}
+
 class _PhotoScenePainter extends CustomPainter {
   const _PhotoScenePainter({
     required this.image,
     required this.state,
     required this.showFullUncropped,
-    required this.showOriginal,
+    required this.compareMode,
+    required this.splitPosition,
     required this.activeStroke,
   });
 
   final ui.Image image;
   final PhotoEditState state;
   final bool showFullUncropped;
-  final bool showOriginal;
+  final PhotoCompareMode compareMode;
+  final double splitPosition;
   final DrawingStroke? activeStroke;
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (compareMode == PhotoCompareMode.splitCurtain && !showFullUncropped) {
+      PhotoSceneRenderer.paintSplitComparison(
+        canvas: canvas,
+        outputSize: size,
+        image: image,
+        state: state,
+        splitPosition: splitPosition,
+        activeStroke: activeStroke,
+      );
+      return;
+    }
+
     PhotoSceneRenderer.paint(
       canvas: canvas,
       outputSize: size,
       image: image,
       state: state,
       showFullUncropped: showFullUncropped,
-      showOriginal: showOriginal,
+      showOriginal: compareMode == PhotoCompareMode.fullOriginal,
       activeStroke: activeStroke,
     );
   }
@@ -569,7 +861,8 @@ class _PhotoScenePainter extends CustomPainter {
     return oldDelegate.image != image ||
         oldDelegate.state != state ||
         oldDelegate.showFullUncropped != showFullUncropped ||
-        oldDelegate.showOriginal != showOriginal ||
+        oldDelegate.compareMode != compareMode ||
+        oldDelegate.splitPosition != splitPosition ||
         oldDelegate.activeStroke != activeStroke;
   }
 }
